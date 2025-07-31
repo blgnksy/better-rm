@@ -1,0 +1,25 @@
+# better-rm configuration file
+# Place in /etc/better-rm.conf (system-wide) or ~/.better-rm.conf (user-specific)
+
+# Protected directories (one per line)
+# Format: protect=/path/to/directory
+
+# Protect database directories
+protect=/var/lib/mysql
+protect=/var/lib/postgresql
+
+# Protect web server roots
+protect=/var/www
+protect=/srv/http
+
+# Protect custom application directories
+protect=/opt/myapp
+protect=/opt/production
+
+# Protect backup directories
+protect=/backup
+protect=/mnt/backup
+
+# User-specific protections (in ~/.better-rm.conf)
+protect=/home/user/important
+protect=/home/user/projects/production

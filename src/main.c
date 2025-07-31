@@ -12,7 +12,7 @@
 #include <time.h>
 #include <pwd.h>
 
-#include "version.h"
+#include "../include/version.h"
 
 // Default configuration
 #define CONFIG_FILE "/etc/better-rm.conf"
@@ -157,11 +157,11 @@ int ensure_trash_dir(const char* trash_dir) {
 char* generate_trash_name(const char* original_path, const char* trash_dir) {
     static char trash_path[PATH_MAX];
     char* basename_copy = strdup(original_path);
-    char* base = basename(basename_copy);
+    const char* base = basename(basename_copy);
 
     time_t now;
     time(&now);
-    struct tm* tm_info = localtime(&now);
+    const struct tm* tm_info = localtime(&now);
 
     // Format: filename.YYYYMMDD_HHMMSS.pid
     snprintf(trash_path, sizeof(trash_path), "%s/%s.%04d%02d%02d_%02d%02d%02d.%d",
@@ -176,7 +176,7 @@ char* generate_trash_name(const char* original_path, const char* trash_dir) {
 
 // Move file to trash
 int move_to_trash(const char* path, const char* trash_dir, bool verbose) {
-    char* trash_path = generate_trash_name(path, trash_dir);
+    const char* trash_path = generate_trash_name(path, trash_dir);
 
     if (verbose) {
         printf("moving '%s' to trash as '%s'\n", path, trash_path);
@@ -269,7 +269,7 @@ int remove_directory(const char* path, const struct Options* opts) {
         return -1;
     }
 
-    struct dirent* entry;
+    const struct dirent* entry;
     char full_path[PATH_MAX];
     int ret = 0;
 

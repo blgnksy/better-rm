@@ -1,0 +1,67 @@
+# Build directories
+build/
+cmake-build-*/
+Debug/
+Release/
+
+# Compiled binaries
+better-rm
+*.o
+*.a
+*.so
+
+# CMake files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps/
+
+# Packaging
+*.deb
+*.rpm
+*.tar.gz
+*.tgz
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Test files
+test_*
+*.test
+
+# Temporary files
+*.tmp
+*.bak
+*.old
+
+# Core dumps
+core
+core.*
+
+# User configuration (don't commit personal configs)
+.better-rm.conf
+
+# Python virtual environment
+venv/
+env/
+.env
+*.pyc
+__pycache__/
+
+# Commitizen
+.cz-config.js
+node_modules/
+
+# Pre-commit
+.pre-commit-config.yaml.lock

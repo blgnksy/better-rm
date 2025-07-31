@@ -1,16 +1,16 @@
 #define GNU_SOURCE
+#include <dirent.h>
+#include <errno.h>
+#include <getopt.h>
+#include <pwd.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <dirent.h>
 #include <sys/stat.h>
-#include <errno.h>
-#include <stdbool.h>
-#include <getopt.h>
 #include <syslog.h>
 #include <time.h>
-#include <pwd.h>
+#include <unistd.h>
 
 #include "../include/version.h"
 
@@ -22,27 +22,11 @@
 #define MAX_PROTECTED_DIRS 100
 
 // Built-in protected directories
-const char* DEFAULT_PROTECTED_DIRS[] = {
-    "/",
-    "/bin",
-    "/boot",
-    "/dev",
-    "/etc",
-    "/home",
-    "/lib",
-    "/lib32",
-    "/lib64",
-    "/proc",
-    "/root",
-    "/sbin",
-    "/sys",
-    "/usr",
-    "/var",
-    NULL
-};
+const char *DEFAULT_PROTECTED_DIRS[] = {"/",      "/bin",  "/boot", "/dev",  "/etc", "/home", "/lib", "/lib32",
+                                        "/lib64", "/proc", "/root", "/sbin", "/sys", "/usr",  "/var", NULL};
 
 // Dynamic protected directories list
-char* protected_dirs[MAX_PROTECTED_DIRS];
+char *protected_dirs[MAX_PROTECTED_DIRS];
 int protected_count = 0;
 
 // Options structure
@@ -56,7 +40,7 @@ struct Options {
     bool one_file_system;
     bool use_trash;
     bool no_preserve_root;
-    char* trash_dir;
+    char *trash_dir;
 };
 
 // Initialize protected directories from defaults
@@ -69,18 +53,21 @@ void init_protected_dirs() {
 }
 
 // Load configuration file
-void load_config_file(const char* filename) {
-    FILE* fp = fopen(filename, "r");
-    if (!fp) return;
+void load_config_file(const char *filename) {
+    FILE *fp = fopen(filename, "r");
+    if (!fp)
+        return;
 
     char line[PATH_MAX];
     while (fgets(line, sizeof(line), fp)) {
         // Skip comments and empty lines
-        if (line[0] == '#' || line[0] == '\n' || line[0] == '\0') continue;
+        if (line[0] == '#' || line[0] == '\n' || line[0] == '\0')
+            continue;
 
         // Remove newline
         size_t len = strlen(line);
-        if (len > 0 && line[len-1] == '\n') line[len-1] = '\0';
+        if (len > 0 && line[len - 1] == '\n')
+            line[len - 1] = '\0';
 
         // Parse directives
         if (strncmp(line, "protect=", 8) == 0) {
@@ -102,8 +89,8 @@ void load_configs() {
 
     // User config - check multiple locations
     char user_config[PATH_MAX];
-    const char* config_home = getenv("XDG_CONFIG_HOME");
-    const char* home = getenv("HOME");
+    const char *config_home = getenv("XDG_CONFIG_HOME");
+    const char *home = getenv("HOME");
 
     if (config_home) {
         // Follow XDG Base Directory spec
@@ -117,28 +104,30 @@ void load_configs() {
 }
 
 // Get trash directory path
-char* get_trash_dir() {
+char *get_trash_dir() {
     // Check environment variable first
-    char* env_trash = getenv(TRASH_DIR_ENV);
-    if (env_trash) return env_trash;
+    char *env_trash = getenv(TRASH_DIR_ENV);
+    if (env_trash)
+        return env_trash;
 
     // Use default in home directory
-    const char* home = getenv("HOME");
+    const char *home = getenv("HOME");
     if (home) {
         static char trash_path[PATH_MAX];
         snprintf(trash_path, sizeof(trash_path), "%s/%s", home, DEFAULT_TRASH_DIR);
         return trash_path;
     }
 
-    return "/tmp/.Trash";  // Fallback
+    return "/tmp/.Trash"; // Fallback
 }
 
 // Create trash directory if it doesn't exist
-int ensure_trash_dir(const char* trash_dir) {
+int ensure_trash_dir(const char *trash_dir) {
     struct stat st;
     if (stat(trash_dir, &st) == 0) {
         if (!S_ISDIR(st.st_mode)) {
-            fprintf(stderr, "better-rm: trash path exists but is not better_rm-trash-cleanup.service directory: %s\n", trash_dir);
+            fprintf(stderr, "better-rm: trash path exists but is not better_rm-trash-cleanup.service directory: %s\n",
+                    trash_dir);
             return -1;
         }
         return 0;
@@ -154,29 +143,27 @@ int ensure_trash_dir(const char* trash_dir) {
 }
 
 // Generate unique filename for trash
-char* generate_trash_name(const char* original_path, const char* trash_dir) {
+char *generate_trash_name(const char *original_path, const char *trash_dir) {
     static char trash_path[PATH_MAX];
-    char* basename_copy = strdup(original_path);
-    const char* base = basename(basename_copy);
+    char *basename_copy = strdup(original_path);
+    const char *base = basename(basename_copy);
 
     time_t now;
     time(&now);
-    const struct tm* tm_info = localtime(&now);
+    const struct tm *tm_info = localtime(&now);
 
     // Format: filename.YYYYMMDD_HHMMSS.pid
-    snprintf(trash_path, sizeof(trash_path), "%s/%s.%04d%02d%02d_%02d%02d%02d.%d",
-             trash_dir, base,
-             tm_info->tm_year + 1900, tm_info->tm_mon + 1, tm_info->tm_mday,
-             tm_info->tm_hour, tm_info->tm_min, tm_info->tm_sec,
-             getpid());
+    snprintf(trash_path, sizeof(trash_path), "%s/%s.%04d%02d%02d_%02d%02d%02d.%d", trash_dir, base,
+             tm_info->tm_year + 1900, tm_info->tm_mon + 1, tm_info->tm_mday, tm_info->tm_hour, tm_info->tm_min,
+             tm_info->tm_sec, getpid());
 
     free(basename_copy);
     return trash_path;
 }
 
 // Move file to trash
-int move_to_trash(const char* path, const char* trash_dir, bool verbose) {
-    const char* trash_path = generate_trash_name(path, trash_dir);
+int move_to_trash(const char *path, const char *trash_dir, bool verbose) {
+    const char *trash_path = generate_trash_name(path, trash_dir);
 
     if (verbose) {
         printf("moving '%s' to trash as '%s'\n", path, trash_path);
@@ -192,8 +179,8 @@ int move_to_trash(const char* path, const char* trash_dir, bool verbose) {
 }
 
 // Function to resolve better_rm-trash-cleanup.service path to its absolute form
-char* resolve_path(const char* path) {
-    char* resolved = realpath(path, NULL);
+char *resolve_path(const char *path) {
+    char *resolved = realpath(path, NULL);
     if (resolved == NULL) {
         // If realpath fails, try to construct absolute path manually
         if (path[0] != '/') {
@@ -212,14 +199,15 @@ char* resolve_path(const char* path) {
 }
 
 // Function to check if better_rm-trash-cleanup.service path is protected
-bool is_protected(const char* path) {
-    char* resolved = resolve_path(path);
-    if (resolved == NULL) return false;
+bool is_protected(const char *path) {
+    char *resolved = resolve_path(path);
+    if (resolved == NULL)
+        return false;
 
     // Normalize path by removing trailing slashes
     size_t len = strlen(resolved);
-    while (len > 1 && resolved[len-1] == '/') {
-        resolved[len-1] = '\0';
+    while (len > 1 && resolved[len - 1] == '/') {
+        resolved[len - 1] = '\0';
         len--;
     }
 
@@ -236,11 +224,13 @@ bool is_protected(const char* path) {
 }
 
 // Check if path is root when preserve-root is enabled
-bool is_root_with_preserve(const char* path, const struct Options* opts) {
-    if (!opts->preserve_root || opts->no_preserve_root) return false;
+bool is_root_with_preserve(const char *path, const struct Options *opts) {
+    if (!opts->preserve_root || opts->no_preserve_root)
+        return false;
 
-    char* resolved = resolve_path(path);
-    if (resolved == NULL) return false;
+    char *resolved = resolve_path(path);
+    if (resolved == NULL)
+        return false;
 
     bool is_root = (strcmp(resolved, "/") == 0);
     free(resolved);
@@ -248,28 +238,27 @@ bool is_root_with_preserve(const char* path, const struct Options* opts) {
 }
 
 // Log deletion to syslog
-void log_deletion(const char* path, const char* action, bool success) {
+void log_deletion(const char *path, const char *action, bool success) {
     openlog("better-rm", LOG_PID, LOG_USER);
 
     if (success) {
-        syslog(LOG_INFO, "%s: %s (user: %s, uid: %d)",
-               action, path, getenv("USER"), getuid());
+        syslog(LOG_INFO, "%s: %s (user: %s, uid: %d)", action, path, getenv("USER"), getuid());
     } else {
-        syslog(LOG_WARNING, "%s FAILED: %s (user: %s, uid: %d, error: %s)",
-               action, path, getenv("USER"), getuid(), strerror(errno));
+        syslog(LOG_WARNING, "%s FAILED: %s (user: %s, uid: %d, error: %s)", action, path, getenv("USER"), getuid(),
+               strerror(errno));
     }
 
     closelog();
 }
 
 // Recursive directory removal
-int remove_directory(const char* path, const struct Options* opts) {
-    DIR* dir = opendir(path);
+int remove_directory(const char *path, const struct Options *opts) {
+    DIR *dir = opendir(path);
     if (!dir) {
         return -1;
     }
 
-    const struct dirent* entry;
+    const struct dirent *entry;
     char full_path[PATH_MAX];
     int ret = 0;
 
@@ -303,10 +292,8 @@ int remove_directory(const char* path, const struct Options* opts) {
                 ret = remove_directory(full_path, opts);
             } else {
                 if (opts->verbose || opts->dry_run) {
-                    printf("%s%s '%s'\n",
-                           opts->dry_run ? "[DRY-RUN] would be " : "",
-                           opts->use_trash ? "trashing" : "removing",
-                           full_path);
+                    printf("%s%s '%s'\n", opts->dry_run ? "[DRY-RUN] would be " : "",
+                           opts->use_trash ? "trashing" : "removing", full_path);
                 }
                 if (!opts->dry_run) {
                     if (opts->use_trash) {
@@ -328,10 +315,8 @@ int remove_directory(const char* path, const struct Options* opts) {
 
     if (ret == 0) {
         if (opts->verbose || opts->dry_run) {
-            printf("%s%s directory '%s'\n",
-                   opts->dry_run ? "[DRY-RUN] would be " : "",
-                   opts->use_trash ? "trashing" : "removing",
-                   path);
+            printf("%s%s directory '%s'\n", opts->dry_run ? "[DRY-RUN] would be " : "",
+                   opts->use_trash ? "trashing" : "removing", path);
         }
         if (!opts->dry_run) {
             if (opts->use_trash) {
@@ -347,7 +332,7 @@ int remove_directory(const char* path, const struct Options* opts) {
 }
 
 // Safe remove function
-int safe_remove(const char* path, const struct Options* opts) {
+int safe_remove(const char *path, const struct Options *opts) {
     // Check if path is protected
     if (is_protected(path)) {
         fprintf(stderr, "%sbetter-rm: cannot remove '%s': Protected system directory\n",
@@ -366,8 +351,8 @@ int safe_remove(const char* path, const struct Options* opts) {
     struct stat st;
     if (lstat(path, &st) != 0) {
         if (!opts->force) {
-            fprintf(stderr, "%sbetter-rm: cannot remove '%s': %s\n",
-                    opts->dry_run ? "[DRY-RUN] " : "", path, strerror(errno));
+            fprintf(stderr, "%sbetter-rm: cannot remove '%s': %s\n", opts->dry_run ? "[DRY-RUN] " : "", path,
+                    strerror(errno));
             return 1;
         }
         return 0;
@@ -391,19 +376,15 @@ int safe_remove(const char* path, const struct Options* opts) {
         }
 
         if (opts->verbose || opts->dry_run) {
-            printf("%s%s directory '%s' recursively\n",
-                   opts->dry_run ? "[DRY-RUN] would be " : "",
-                   opts->use_trash ? "trashing" : "removing",
-                   path);
+            printf("%s%s directory '%s' recursively\n", opts->dry_run ? "[DRY-RUN] would be " : "",
+                   opts->use_trash ? "trashing" : "removing", path);
         }
 
         return remove_directory(path, opts) == 0 ? 0 : 1;
     } else {
         // Remove regular file or symlink
         if (opts->verbose || opts->dry_run) {
-            printf("%s%s '%s'\n",
-                   opts->dry_run ? "[DRY-RUN] would be " : "",
-                   opts->use_trash ? "trashing" : "removing",
+            printf("%s%s '%s'\n", opts->dry_run ? "[DRY-RUN] would be " : "", opts->use_trash ? "trashing" : "removing",
                    path);
         }
 
@@ -417,9 +398,8 @@ int safe_remove(const char* path, const struct Options* opts) {
 
             if (ret != 0) {
                 if (!opts->force) {
-                    fprintf(stderr, "better-rm: cannot %s '%s': %s\n",
-                            opts->use_trash ? "trash" : "remove",
-                            path, strerror(errno));
+                    fprintf(stderr, "better-rm: cannot %s '%s': %s\n", opts->use_trash ? "trash" : "remove", path,
+                            strerror(errno));
                     return 1;
                 }
             }
@@ -432,17 +412,17 @@ int safe_remove(const char* path, const struct Options* opts) {
 }
 
 // Print version information
-void print_version(){
-  printf("Version: %s\n", VERSION);
-  printf("Copyright (C) 2025 Your Name\n");
-  printf("License: MIT\n");
-  printf("This is free software: you are free to change and redistribute it.\n");
-  printf("There is NO WARRANTY, to the extent permitted by law.\n");
+void print_version() {
+    printf("Version: %s\n", VERSION);
+    printf("Copyright (C) 2025 Your Name\n");
+    printf("License: MIT\n");
+    printf("This is free software: you are free to change and redistribute it.\n");
+    printf("There is NO WARRANTY, to the extent permitted by law.\n");
 }
 
 
 // Print usage
-void print_usage(const char* program_name) {
+void print_usage(const char *program_name) {
     printf("Usage: %s [options] file...\n", program_name);
     printf("Better replacement for rm command with protection against deleting system directories\n\n");
     printf("Version %s\n\n", VERSION);
@@ -470,19 +450,17 @@ void print_usage(const char* program_name) {
     printf("\n");
 }
 
-int main(int argc, char* argv[]) {
-    struct Options opts = {
-        .recursive = false,
-        .force = false,
-        .verbose = false,
-        .interactive = false,
-        .dry_run = false,
-        .preserve_root = true,  // Default to safe
-        .one_file_system = false,
-        .use_trash = false,
-        .no_preserve_root = false,
-        .trash_dir = NULL
-    };
+int main(int argc, char *argv[]) {
+    struct Options opts = {.recursive = false,
+                           .force = false,
+                           .verbose = false,
+                           .interactive = false,
+                           .dry_run = false,
+                           .preserve_root = true, // Default to safe
+                           .one_file_system = false,
+                           .use_trash = false,
+                           .no_preserve_root = false,
+                           .trash_dir = NULL};
 
     // Initialize protected directories
     init_protected_dirs();
@@ -491,19 +469,12 @@ int main(int argc, char* argv[]) {
     // Parse command line options
     int opt;
     static struct option long_options[] = {
-        {"recursive", no_argument, 0, 'r'},
-        {"force", no_argument, 0, 'f'},
-        {"verbose", no_argument, 0, 'v'},
-        {"dry-run", no_argument, 0, 'n'},
-        {"trash", no_argument, 0, 't'},
-        {"trash-dir", required_argument, 0, 0},
-        {"preserve-root", no_argument, 0, 0},
-        {"no-preserve-root", no_argument, 0, 0},
-        {"one-file-system", no_argument, 0, 0},
-        {"help", no_argument, 0, 'h'},
-        {"version", no_argument, 0, 'V'},
-        {0, 0, 0, 0}
-    };
+            {"recursive", no_argument, 0, 'r'},     {"force", no_argument, 0, 'f'},
+            {"verbose", no_argument, 0, 'v'},       {"dry-run", no_argument, 0, 'n'},
+            {"trash", no_argument, 0, 't'},         {"trash-dir", required_argument, 0, 0},
+            {"preserve-root", no_argument, 0, 0},   {"no-preserve-root", no_argument, 0, 0},
+            {"one-file-system", no_argument, 0, 0}, {"help", no_argument, 0, 'h'},
+            {"version", no_argument, 0, 'V'},       {0, 0, 0, 0}};
 
     int option_index = 0;
     while ((opt = getopt_long(argc, argv, "rRfivnthV", long_options, &option_index)) != -1) {
@@ -540,7 +511,7 @@ int main(int argc, char* argv[]) {
                 break;
             case 'n':
                 opts.dry_run = true;
-                opts.verbose = true;  // Dry-run implies verbose
+                opts.verbose = true; // Dry-run implies verbose
                 break;
             case 't':
                 opts.use_trash = true;
@@ -549,8 +520,8 @@ int main(int argc, char* argv[]) {
                 print_usage(argv[0]);
                 return 0;
             case 'V':
-              print_version();
-              return 0;
+                print_version();
+                return 0;
             default:
                 print_usage(argv[0]);
                 return 1;

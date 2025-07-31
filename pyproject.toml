@@ -1,0 +1,42 @@
+[project]
+name = "better-rm-dev"
+version = "0.1.0"
+description = "Development environment for better-rm C project"
+readme = "README.md"
+requires-python = ">=3.8"
+# Mark as non-installable since this is not a Python package
+# This prevents accidental installation
+classifiers = [
+    "Private :: Do Not Upload",
+]
+
+# No build system needed for a C project
+# Remove any [build-system] section
+
+[tool.uv]
+dev-dependencies = [
+    "commitizen>=3.0.0",
+    "pre-commit>=3.0.0",
+    # Add other development tools as needed
+    # "black>=24.0.0",  # if you have Python scripts
+    # "ruff>=0.1.0",    # if you have Python scripts
+    # "mypy>=1.0.0",    # if you have Python scripts
+]
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+version_provider = "pep621"
+version_files = [
+    "VERSION",
+    "include/version.h:VERSION",
+]
+tag_format = "v$version"
+update_changelog_on_bump = true
+changelog_file = "CHANGELOG.md"
+
+[tool.hatch]
+# Explicitly disable building since this is not a Python package
+build.skip = true
+
+[tool.hatch.build.targets.wheel]
+packages = []

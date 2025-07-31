@@ -64,11 +64,10 @@ jobs:
       - name: Run cppcheck
         run: |
           cppcheck --enable=all --error-exitcode=1 \
-            --suppress=missingIncludeSystem \
-            --inline-suppr \
-            -I include/ \
-            --project=build/compile_commands.json \
-            src/
+          --suppress=missingIncludeSystem \
+          --inline-suppr \
+          -I include/ \
+          src/
 
       - name: Run clang static analyzer (clang only)
         if: matrix.compiler == 'clang' && matrix.build_type == 'Debug'

@@ -4,7 +4,8 @@ on:
   workflow_dispatch:
   pull_request:
   push:
-    branches: [ master, main ]
+    tags:
+      - "v*"
 
 jobs:
   build:
@@ -80,14 +81,14 @@ jobs:
           $BIN / 2>&1 | grep -q "Protected system directory" || exit 1
 
       - name: Package
-        if: matrix.build_type == 'Release' && matrix.compiler == 'gcc'
+        if: matrix.build_type == 'Release' && matrix.compiler == 'gcc' &&  github.event_name != 'workflow_dispatch' &&  startsWith(github.ref_name, 'v')
         run: |
           cd build
           make package
           ls -la *.deb *.rpm *.tar.gz || true
 
       - name: Upload packages
-        if: matrix.build_type == 'Release' && matrix.compiler == 'gcc'
+        if: matrix.build_type == 'Release' && matrix.compiler == 'gcc' &&  github.event_name != 'workflow_dispatch' &&  startsWith(github.ref_name, 'v')
         uses: actions/upload-artifact@v4
         with:
           name: packages

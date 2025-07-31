@@ -1,17 +1,22 @@
 [Unit]
-Description=Run better_rm trash cleanup weekly
-Documentation=man:better_rm(1)
-Requires=better_rm-trash-cleanup.service
+Description=Clean old files from better-rm trash directories
+Documentation=man:better-rm(1)
+After=multi-user.target
 
-[Timer]
-# Run every Sunday at 3:00 AM
-OnCalendar=weekly
-# Also run 15 minutes after boot if a scheduled run was missed
-OnBootSec=15min
-# Randomize start time by up to 1 hour to prevent load spikes
-RandomizedDelaySec=1h
-# Save last trigger time
-Persistent=true
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/trash-cleanup.sh
+StandardOutput=journal
+StandardError=journal
+Nice=19
+IOSchedulingClass=idle
+
+# Security hardening
+PrivateTmp=yes
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home /root
 
 [Install]
-WantedBy=timers.target
+WantedBy=multi-user.target

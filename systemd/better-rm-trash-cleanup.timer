@@ -1,7 +1,7 @@
 [Unit]
-Description=Run better_rm trash cleanup weekly
-Documentation=man:better_rm(1)
-Requires=better_rm-trash-cleanup.service
+Description=Run better-rm trash cleanup weekly
+Documentation=man:better-rm(1)
+Requires=better-rm-trash-cleanup.service
 
 [Timer]
 # Run every Sunday at 3:00 AM

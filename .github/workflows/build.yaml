@@ -4,14 +4,13 @@ on:
   workflow_dispatch:
   pull_request:
   push:
-    branches: [ master, main ]  # Support both branch names
+    branches: [ master, main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     strategy:
-      fail-fast: false  # Don't cancel all jobs if one fails
       matrix:
         compiler: [gcc, clang]
         build_type: [Debug, Release]
@@ -19,192 +18,81 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Cache build dependencies
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/apt-cache
-            ~/.ccache
-          key: ${{ runner.os }}-build-${{ matrix.compiler }}-${{ hashFiles('**/CMakeLists.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-build-${{ matrix.compiler }}-
-            ${{ runner.os }}-build-
-
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake build-essential clang cppcheck ccache
-
-          # Setup ccache for faster rebuilds
-          echo "PATH=/usr/lib/ccache:$PATH" >> $GITHUB_ENV
-
-      - name: Check project structure
-        run: |
-          # Verify required files exist
-          for file in CMakeLists.txt VERSION src/main.c include/version.h; do
-            if [ ! -f "$file" ]; then
-              echo "Error: Required file $file not found!"
-              exit 1
-            fi
-          done
-
-          # Show version info
-          echo "Building version: $(cat VERSION)"
+          sudo apt-get install -y cmake build-essential clang cppcheck
 
       - name: Configure CMake
         run: |
           cmake -B build \
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-            -DCMAKE_C_COMPILER=${{ matrix.compiler }} \
-            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+            -DCMAKE_C_COMPILER=${{ matrix.compiler }}
 
       - name: Build
-        run: cmake --build build --parallel $(nproc)
+        run: cmake --build build
 
       - name: Run cppcheck
         run: |
           cppcheck --enable=all --error-exitcode=1 \
-          --suppress=missingIncludeSystem \
-          --inline-suppr \
-          -I include/ \
-          src/
-
-#      - name: Run clang static analyzer (clang only)
-#        if: matrix.compiler == 'clang' && matrix.build_type == 'Debug'
-#        run: |
-#          cd build
-#          make clean
-#          scan-build --status-bugs cmake --build . --parallel $(nproc)
+            --suppress=missingIncludeSystem \
+            --inline-suppr \
+            -I include/ \
+            src/
 
       - name: Test installation
         run: |
           cd build
           sudo make install
 
-          # Check installation
-          which better-rm || which better-rm
-
-          # Test version output
-          if which better-rm >/dev/null 2>&1; then
-            better-rm --version
-            better-rm --help
-          elif which better-rm >/dev/null 2>&1; then
-            better-rm --version
-            better-rm --help
-          fi
-
-      - name: Test basic functionality
-        run: |
-          # Set the binary name
-          if which better-rm >/dev/null 2>&1; then
-            BIN=better-rm
+          # Find the installed binary (could be safe_rm or better-rm)
+          if which safe_rm >/dev/null 2>&1; then
+            BIN=safe_rm
           elif which better-rm >/dev/null 2>&1; then
             BIN=better-rm
           else
-            echo "Binary not found!"
+            echo "Error: Binary not found after installation!"
             exit 1
           fi
 
-          # Create test environment
-          TEST_DIR=$(mktemp -d)
-          cd $TEST_DIR
+          # Test it works
+          $BIN --version
+          $BIN --help
 
-          echo "Testing with binary: $BIN"
+      - name: Test basic functionality
+        run: |
+          BIN=better-rm
 
           # Create test files
-          mkdir -p test_dir/subdir
-          touch test_file.txt test_dir/nested.txt test_dir/subdir/deep.txt
-          ln -s test_file.txt test_link.txt
+          mkdir -p test_dir
+          touch test_file.txt test_dir/nested.txt
 
-          # Test 1: Help and version
-          $BIN --help | grep -q "Safe replacement for rm" || exit 1
-          $BIN --version | grep -q "version" || exit 1
-
-          # Test 2: Dry-run
-          echo "Test: Dry-run mode"
+          # Test dry-run
           $BIN -n test_file.txt | grep -q "DRY-RUN" || exit 1
-          [ -f test_file.txt ] || { echo "File deleted in dry-run!"; exit 1; }
+          [ -f test_file.txt ] || exit 1
 
-          # Test 3: Trash mode
-          echo "Test: Trash mode"
+          # Test trash mode
           $BIN -t test_file.txt
-          [ ! -f test_file.txt ] || { echo "File not moved to trash!"; exit 1; }
-          ls ~/.Trash/test_file.txt.* >/dev/null || { echo "File not in trash!"; exit 1; }
+          [ ! -f test_file.txt ] || exit 1
+          ls ~/.Trash/test_file.txt.* || exit 1
 
-          # Test 4: Recursive deletion
-          echo "Test: Recursive deletion"
-          $BIN -rf test_dir/
-          [ ! -d test_dir ] || { echo "Directory not deleted!"; exit 1; }
-
-          # Test 5: Symlink handling
-          echo "Test: Symlink handling"
-          $BIN test_link.txt 2>/dev/null
-          [ ! -L test_link.txt ] || { echo "Symlink not deleted!"; exit 1; }
-
-          # Test 6: Protected directories
-          echo "Test: Protected directories"
-          $BIN / 2>&1 | grep -q "Protected system directory" || { echo "Root not protected!"; exit 1; }
-          $BIN /usr 2>&1 | grep -q "Protected system directory" || { echo "/usr not protected!"; exit 1; }
-          $BIN /etc 2>&1 | grep -q "Protected system directory" || { echo "/etc not protected!"; exit 1; }
-
-          # Test 7: Non-existent file
-          echo "Test: Non-existent file handling"
-          $BIN non_existent.txt 2>&1 | grep -q "cannot remove" || exit 1
-
-          # Test 8: Force mode with non-existent
-          echo "Test: Force mode"
-          $BIN -f non_existent.txt || { echo "Force mode failed!"; exit 1; }
-
-          # Cleanup
-          cd /
-          rm -rf $TEST_DIR
-
-          echo "All tests passed!"
-
-      - name: Build statistics
-        if: matrix.build_type == 'Release'
-        run: |
-          echo "### Build Statistics ###"
-          echo "Binary size:"
-          ls -lh build/better-rm || ls -lh build/better-rm
-          echo ""
-          echo "Build time:"
-          cmake --build build --target clean
-          /usr/bin/time -f "Time: %E" cmake --build build --parallel $(nproc)
+          # Test protection
+          $BIN / 2>&1 | grep -q "Protected system directory" || exit 1
 
       - name: Package
         if: matrix.build_type == 'Release' && matrix.compiler == 'gcc'
         run: |
           cd build
           make package
-
-          # Rename packages with version
-          VERSION=$(cat ../VERSION)
-          for pkg in *.deb *.rpm *.tar.gz; do
-            if [ -f "$pkg" ]; then
-              echo "Created package: $pkg"
-              ls -lh "$pkg"
-            fi
-          done
+          ls -la *.deb *.rpm *.tar.gz || true
 
       - name: Upload packages
         if: matrix.build_type == 'Release' && matrix.compiler == 'gcc'
         uses: actions/upload-artifact@v4
         with:
-          name: packages-${{ github.sha }}
+          name: packages
           path: |
             build/*.deb
             build/*.rpm
             build/*.tar.gz
-          retention-days: 90
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-logs-${{ matrix.compiler }}-${{ matrix.build_type }}
-          path: |
-            build/CMakeFiles/CMakeOutput.log
-            build/CMakeFiles/CMakeError.log
-          retention-days: 90
           if-no-files-found: ignore

@@ -97,7 +97,7 @@ if(NOT TARGET uninstall)
 endif()
 
 # Add packaging support
-set(CPACK_GENERATOR "DEB;RPM;TGZ")
+set(CPACK_GENERATOR "DEB")
 set(CPACK_PACKAGE_NAME "better-rm")
 set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Better replacement for rm command with protection against deleting system directories")

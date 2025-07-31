@@ -82,12 +82,12 @@ jobs:
           sudo make install
 
           # Check installation
-          which safe_rm || which better-rm
+          which better-rm || which better-rm
 
           # Test version output
-          if which safe_rm >/dev/null 2>&1; then
-            safe_rm --version
-            safe_rm --help
+          if which better-rm >/dev/null 2>&1; then
+            better-rm --version
+            better-rm --help
           elif which better-rm >/dev/null 2>&1; then
             better-rm --version
             better-rm --help
@@ -96,8 +96,8 @@ jobs:
       - name: Test basic functionality
         run: |
           # Set the binary name
-          if which safe_rm >/dev/null 2>&1; then
-            BIN=safe_rm
+          if which better-rm >/dev/null 2>&1; then
+            BIN=better-rm
           elif which better-rm >/dev/null 2>&1; then
             BIN=better-rm
           else
@@ -166,7 +166,7 @@ jobs:
         run: |
           echo "### Build Statistics ###"
           echo "Binary size:"
-          ls -lh build/safe_rm || ls -lh build/better-rm
+          ls -lh build/better-rm || ls -lh build/better-rm
           echo ""
           echo "Build time:"
           cmake --build build --target clean

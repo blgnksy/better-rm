@@ -43,7 +43,7 @@ jobs:
           # Get the latest tag
           LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
           echo "Latest tag: $LATEST_TAG"
-          
+
           # Check if there are commits since the last tag that warrant a version bump
           if git log $LATEST_TAG..HEAD --grep="^feat\|^fix\|^perf\|BREAKING CHANGE" --oneline | grep -q .; then
             echo "bump_needed=true" >> $GITHUB_OUTPUT
@@ -58,7 +58,7 @@ jobs:
         run: |
           # Run commitizen bump
           uv run cz bump --yes --changelog
-          
+
           # Get the new version
           NEW_VERSION=$(cat VERSION)
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT

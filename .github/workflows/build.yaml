@@ -50,16 +50,16 @@ jobs:
           # Create test files
           mkdir -p test_dir
           touch test_file.txt test_dir/nested.txt
-          
+
           # Test dry-run
           better-rm -n test_file.txt
           [ -f test_file.txt ] || exit 1
-          
+
           # Test trash mode
           better-rm -t test_file.txt
           [ ! -f test_file.txt ] || exit 1
           ls ~/.Trash/test_file.txt.* || exit 1
-          
+
           # Test protection
           better-rm / 2>&1 | grep -q "Protected system directory" || exit 1
 

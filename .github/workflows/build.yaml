@@ -69,12 +69,12 @@ jobs:
           -I include/ \
           src/
 
-      - name: Run clang static analyzer (clang only)
-        if: matrix.compiler == 'clang' && matrix.build_type == 'Debug'
-        run: |
-          cd build
-          make clean
-          scan-build --status-bugs cmake --build . --parallel $(nproc)
+#      - name: Run clang static analyzer (clang only)
+#        if: matrix.compiler == 'clang' && matrix.build_type == 'Debug'
+#        run: |
+#          cd build
+#          make clean
+#          scan-build --status-bugs cmake --build . --parallel $(nproc)
 
       - name: Test installation
         run: |

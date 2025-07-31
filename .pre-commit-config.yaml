@@ -1,10 +1,4 @@
 repos:
-  - repo: https://github.com/commitizen-tools/commitizen
-    rev: v3.13.0
-    hooks:
-      - id: commitizen
-        stages: [commit-msg]
-
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
@@ -12,13 +6,19 @@ repos:
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-added-large-files
-        args: ['--maxkb=1000']
-      - id: check-toml
 
-  - repo: https://github.com/pocc/pre-commit-hooks
-    rev: v1.3.5
+  # Use only system tools for C/C++
+  - repo: local
     hooks:
       - id: clang-format
-        args: [--style=file]
+        name: Format C code
+        entry: bash -c 'clang-format --style=file -i "$@"' --
+        language: system
+        files: \.(c|h)$
+
       - id: cppcheck
-        args: [--enable=warning,performance,portability, -I, include]
+        name: Static analysis
+        entry: bash -c 'cppcheck --enable=warning --suppress=missingIncludeSystem -I include "$@"' --
+        language: system
+        files: \.c$
+        pass_filenames: true

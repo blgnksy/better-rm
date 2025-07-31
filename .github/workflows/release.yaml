@@ -27,7 +27,7 @@ jobs:
       - name: Create packages
         run: |
           cd build
-          make package
+          cmake --build . --target package
           # Rename packages with version
           VERSION=$(cat ../VERSION)
           mv *.deb safe-rm_${VERSION}_amd64.deb || true
@@ -38,11 +38,11 @@ jobs:
         run: |
           VERSION=$(cat VERSION)
           mkdir -p safe-rm-${VERSION}-linux-amd64
-          cp build/safe_rm safe-rm-${VERSION}-linux-amd64/
-          cp README.md safe-rm-${VERSION}-linux-amd64/
-          cp -r config safe-rm-${VERSION}-linux-amd64/
-          cp -r systemd safe-rm-${VERSION}-linux-amd64/
-          tar -czf safe-rm-${VERSION}-linux-amd64.tar.gz safe-rm-${VERSION}-linux-amd64/
+          cp build/better-rm better-rm-${VERSION}-linux-amd64/
+          cp README.md better-rm-${VERSION}-linux-amd64/
+          cp -r config better-rm-${VERSION}-linux-amd64/
+          cp -r systemd better-rm-${VERSION}-linux-amd64/
+          tar -czf better-rm-${VERSION}-linux-amd64.tar.gz better-rm-${VERSION}-linux-amd64/
 
       - name: Upload release assets
         uses: softprops/action-gh-release@v1
@@ -51,6 +51,6 @@ jobs:
             build/*.deb
             build/*.rpm
             build/*.tar.gz
-            safe-rm-*-linux-amd64.tar.gz
+            better-rm-*-linux-amd64.tar.gz
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.BR_PAT }}

@@ -38,11 +38,5 @@ changelog_file = "CHANGELOG.md"
 # Explicitly disable building since this is not a Python package
 build.skip = true
 
-# Alternative: if you need hatch for some reason, configure it to skip everything
-[tool.hatch.build]
-skip-excluded-dirs = true
-artifacts = []
-exclude = ["*"]
-
 [tool.hatch.build.targets.wheel]
 packages = []

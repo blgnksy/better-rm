@@ -1,0 +1,69 @@
+name: Build and Test
+
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        compiler: [gcc, clang]
+        build_type: [Debug, Release]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential clang cppcheck
+
+      - name: Configure CMake
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+            -DCMAKE_C_COMPILER=${{ matrix.compiler }}
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Run cppcheck
+        run: |
+          cppcheck --enable=all --error-exitcode=1 \
+            --suppress=missingIncludeSystem \
+            --inline-suppr \
+            src/
+
+      - name: Test installation
+        run: |
+          cd build
+          sudo make install
+          which better-rm
+          better-rm --version
+          better-rm --help
+
+      - name: Test basic functionality
+        run: |
+          # Create test files
+          mkdir -p test_dir
+          touch test_file.txt test_dir/nested.txt
+          
+          # Test dry-run
+          better-rm -n test_file.txt
+          [ -f test_file.txt ] || exit 1
+          
+          # Test trash mode
+          better-rm -t test_file.txt
+          [ ! -f test_file.txt ] || exit 1
+          ls ~/.Trash/test_file.txt.* || exit 1
+          
+          # Test protection
+          better-rm / 2>&1 | grep -q "Protected system directory" || exit 1
+
+      - name: Package
+        if: matrix.build_type == 'Release' && matrix.compiler == 'gcc'
+        run: |
+          cd build

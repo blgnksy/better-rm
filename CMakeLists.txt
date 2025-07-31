@@ -54,7 +54,56 @@ install(FILES config/better-rm.conf.example
         RENAME better-rm.conf.example
 )
 
+# Install systemd units (optional, only on Linux with systemd)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    # Check if systemd is available
+    execute_process(
+            COMMAND systemctl --version
+            OUTPUT_QUIET
+            ERROR_QUIET
+            RESULT_VARIABLE SYSTEMD_FOUND
+    )
 
+    if(SYSTEMD_FOUND EQUAL 0)
+        # Install systemd service files
+        install(FILES
+                systemd/better-rm-trash-cleanup.service
+                systemd/better-rm-trash-cleanup.timer
+                DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/systemd/system
+        )
+
+        # Install cleanup script
+        install(PROGRAMS systemd/trash-cleanup.sh
+                DESTINATION ${CMAKE_INSTALL_BINDIR}
+        )
+
+        message(STATUS "Systemd support enabled")
+    else()
+        message(STATUS "Systemd not found, skipping systemd unit installation")
+    endif()
+endif()
+
+# Create uninstall target
+if(NOT TARGET uninstall)
+    configure_file(
+            "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
+            "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+            IMMEDIATE @ONLY
+    )
+
+    add_custom_target(uninstall
+            COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake
+    )
+endif()
+
+# Add packaging support
+set(CPACK_GENERATOR "DEB;RPM;TGZ")
+set(CPACK_PACKAGE_NAME "safe-rm")
+set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Safe replacement for rm command with protection against deleting system directories")
+set(CPACK_PACKAGE_CONTACT "your-email@example.com")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6")
+set(CPACK_RPM_PACKAGE_REQUIRES "glibc")
 include(CPack)
 
 # Print version information

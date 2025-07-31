@@ -1,0 +1,56 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential
+
+      - name: Configure CMake (Release)
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Create packages
+        run: |
+          cd build
+          make package
+          # Rename packages with version
+          VERSION=$(cat ../VERSION)
+          mv *.deb safe-rm_${VERSION}_amd64.deb || true
+          mv *.rpm safe-rm-${VERSION}-1.x86_64.rpm || true
+          mv *.tar.gz safe-rm-${VERSION}.tar.gz || true
+
+      - name: Create binary tarball
+        run: |
+          VERSION=$(cat VERSION)
+          mkdir -p safe-rm-${VERSION}-linux-amd64
+          cp build/safe_rm safe-rm-${VERSION}-linux-amd64/
+          cp README.md safe-rm-${VERSION}-linux-amd64/
+          cp -r config safe-rm-${VERSION}-linux-amd64/
+          cp -r systemd safe-rm-${VERSION}-linux-amd64/
+          tar -czf safe-rm-${VERSION}-linux-amd64.tar.gz safe-rm-${VERSION}-linux-amd64/
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            build/*.deb
+            build/*.rpm
+            build/*.tar.gz
+            safe-rm-*-linux-amd64.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

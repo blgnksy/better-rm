@@ -3,7 +3,7 @@
 ## First Time Setup
 ```bash
 # Clone and setup
-git clone <repo>
+git clone git@github.com:blgnksy/better-rm.git
 cd better-rm
 ./scripts/setup-dev.sh
 ```

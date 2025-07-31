@@ -15,14 +15,6 @@ repos:
         args: ['--maxkb=1000']
       - id: check-toml
 
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.9
-    hooks:
-      - id: ruff
-        types_or: [python, pyi]
-      - id: ruff-format
-        types_or: [python, pyi]
-
   - repo: https://github.com/pocc/pre-commit-hooks
     rev: v1.3.5
     hooks:

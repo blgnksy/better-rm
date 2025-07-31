@@ -3,6 +3,8 @@ name: Build and Test
 on:
   workflow_dispatch:
   pull_request:
+  push:
+    branches: [ master ]
 
 jobs:
   build:
@@ -67,3 +69,15 @@ jobs:
         if: matrix.build_type == 'Release' && matrix.compiler == 'gcc'
         run: |
           cd build
+          make package
+          ls -la *.deb *.rpm *.tar.gz
+
+      - name: Upload packages
+        if: matrix.build_type == 'Release' && matrix.compiler == 'gcc'
+        uses: actions/upload-artifact@v3
+        with:
+          name: packages
+          path: |
+            build/*.deb
+            build/*.rpm
+            build/*.tar.gz

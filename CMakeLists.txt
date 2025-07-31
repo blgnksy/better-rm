@@ -98,10 +98,10 @@ endif()
 
 # Add packaging support
 set(CPACK_GENERATOR "DEB;RPM;TGZ")
-set(CPACK_PACKAGE_NAME "safe-rm")
+set(CPACK_PACKAGE_NAME "better-rm")
 set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Safe replacement for rm command with protection against deleting system directories")
-set(CPACK_PACKAGE_CONTACT "your-email@example.com")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Better replacement for rm command with protection against deleting system directories")
+set(CPACK_PACKAGE_CONTACT "bilginaksoy2003@yahoo.com")
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6")
 set(CPACK_RPM_PACKAGE_REQUIRES "glibc")
 include(CPack)

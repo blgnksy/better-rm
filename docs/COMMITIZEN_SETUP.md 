@@ -1,0 +1,200 @@
+# Commitizen Setup Guide
+
+This project uses Commitizen for automated versioning and conventional commits, managed with `uv` for fast Python dependency management.
+
+## Quick Setup
+
+```bash
+# Run the setup script
+./scripts/setup-dev.sh
+```
+
+This script will:
+- Install uv if not present
+- Create a Python 3.8 virtual environment
+- Install all development dependencies
+- Set up pre-commit hooks
+- Create necessary directories
+
+## Manual Setup
+
+### 1. Install uv (Python package manager)
+```bash
+# On macOS and Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# On Windows
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# Using pip (alternative)
+pip install uv
+```
+
+### 2. Set up Python environment with uv
+```bash
+# Create a Python 3.8 virtual environment
+uv venv --python 3.8
+
+# Activate the virtual environment (optional, uv run handles this automatically)
+# On Linux/macOS:
+source .venv/bin/activate
+# On Windows:
+.venv\Scripts\activate
+
+# Install development dependencies
+uv pip install -e ".[dev]"
+
+# Or simply use uv run to execute commands in the venv
+uv run pre-commit install
+uv run pre-commit install --hook-type commit-msg
+```
+
+### 3. Alternative: Install without virtual environment
+```bash
+# Install globally with uv tool
+uv tool install commitizen
+uv tool install pre-commit
+```
+
+## How to Use
+
+### Making Commits
+
+Instead of `git commit`, use:
+```bash
+# Interactive commit with prompts
+uv run cz commit
+
+# Or if installed globally
+cz commit
+
+# Or use conventional commit format directly
+git commit -m "feat: add new safety check for symbolic links"
+git commit -m "fix: handle spaces in filenames correctly"
+git commit -m "docs: update installation instructions"
+```
+
+### Commit Types
+
+- **feat**: New feature (bumps MINOR version)
+- **fix**: Bug fix (bumps PATCH version)
+- **docs**: Documentation changes (no version bump)
+- **style**: Code style changes (no version bump)
+- **refactor**: Code refactoring (bumps PATCH version)
+- **perf**: Performance improvements (bumps PATCH version)
+- **test**: Test changes (no version bump)
+- **build**: Build system changes (no version bump)
+- **ci**: CI configuration changes (no version bump)
+- **chore**: Other changes (no version bump)
+
+### Breaking Changes
+
+For breaking changes, add `!` after the type or use `BREAKING CHANGE` in the footer:
+```bash
+git commit -m "feat!: change configuration file format"
+# Or
+git commit -m "feat: new config format
+
+BREAKING CHANGE: Configuration files must now use TOML format"
+```
+
+Breaking changes bump the MAJOR version.
+
+### Manual Version Bump
+
+To manually bump the version:
+```bash
+# Bump version based on commits since last tag
+uv run cz bump
+
+# Bump with changelog update
+uv run cz bump --changelog
+
+# Dry run to see what would happen
+uv run cz bump --dry-run
+
+# Force a specific bump
+uv run cz bump --increment MAJOR
+uv run cz bump --increment MINOR
+uv run cz bump --increment PATCH
+```
+
+## GitHub Actions Integration
+
+The GitHub Action will automatically:
+1. Check commits on push to main/master
+2. Determine if a version bump is needed
+3. Bump the version according to commit types
+4. Update VERSION file and src/version.h
+5. Create a git tag
+6. Generate/update CHANGELOG.md
+7. Create a GitHub Release
+
+## Version Files
+
+The following files are automatically updated:
+- `VERSION` - Plain text version number
+- `include/version.h` - C header file with version macros
+- `CHANGELOG.md` - Auto-generated changelog
+
+## CMake Integration
+
+CMake reads the version from the VERSION file:
+```cmake
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" VERSION_STRING)
+```
+
+This version is then:
+- Used for the project version
+- Passed to the compiler as defines
+- Used in package generation
+
+## Example Workflow
+
+1. Make your changes
+2. Commit using conventional format:
+   ```bash
+   cz commit
+   # or
+   git commit -m "feat: add support for custom trash directories"
+   ```
+3. Push to a feature branch and create PR
+4. When PR is merged to main, GitHub Action automatically:
+   - Bumps version
+   - Creates tag
+   - Updates changelog
+   - Creates release
+
+## Troubleshooting
+
+### Pre-commit hook fails
+```bash
+# Check commit message format
+uv run cz check --commit-msg-file .git/COMMIT_EDITMSG
+
+# Bypass hooks temporarily (not recommended)
+git commit --no-verify
+```
+
+### Version not bumping
+Check that your commits follow conventional format:
+```bash
+# Check recent commits
+git log --oneline -10
+
+# Validate commit messages
+uv run cz check --rev-range HEAD~10..HEAD
+```
+
+### Manual changelog generation
+```bash
+uv run cz changelog --incremental
+```
+
+## Benefits
+
+1. **Consistent commit messages** - Team follows same format
+2. **Automated versioning** - No manual version updates
+3. **Automated changelog** - Always up-to-date
+4. **CI/CD friendly** - Integrates with GitHub Actions
+5. **SemVer compliance** - Follows semantic versioning

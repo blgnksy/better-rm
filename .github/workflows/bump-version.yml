@@ -37,6 +37,14 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
 
+      - name: Get current branch
+        id: get_branch
+        run: |
+          # Get the current branch name
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "Current branch: $BRANCH_NAME"
+
       - name: Check if version bump is needed
         id: check_bump
         run: |
@@ -67,7 +75,8 @@ jobs:
       - name: Push changes
         if: steps.check_bump.outputs.bump_needed == 'true'
         run: |
-          git push origin main --follow-tags
+          # Push to the current branch
+          git push origin ${{ steps.get_branch.outputs.branch }} --follow-tags
 
       - name: Create GitHub Release
         if: steps.check_bump.outputs.bump_needed == 'true'

@@ -190,19 +190,16 @@ sudo journalctl -t better-rm -f
 - GCC or Clang compiler
 - CMake 3.10+ (optional, for CMake build)
 - Linux with glibc
-- cppcheck and clang-format (for development)
+- cppcheck, check and clang-format (for development)
 - uv (for development with Commitizen)
 
 ### Install Build Dependencies
 ```bash
 # Debian/Ubuntu
-sudo apt-get install build-essential cmake cppcheck clang-format
+sudo apt-get install build-essential cmake cppcheck clang-format check clang
 
 # Fedora/RHEL
-sudo dnf install gcc cmake cppcheck clang-tools-extra
-
-# macOS
-brew install cmake cppcheck clang-format
+sudo dnf install gcc cmake cppcheck clang-tools-extra check clang
 ```
 
 ### Development Setup
@@ -293,7 +290,6 @@ This project is licensed under the GPL v2 - see the [LICENCE.md](LICENCE.md) fil
 
 
 ## TODO
-- [x] Update documentation for main.c
 - [ ] Provide Makefile
 - [ ] Support macOS (partial support, needs testing)
 - [ ] Add shell completion scripts

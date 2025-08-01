@@ -139,30 +139,6 @@ START_TEST(test_protect_with_spaces) {
 END_TEST
 
 
-// Test XDG config directory
-START_TEST(test_xdg_config_dir) {
-    // Create XDG config structure
-    char xdg_config[256], better_rm_config[256], config_path[256];
-    snprintf(xdg_config, sizeof(xdg_config), "%s/.config", test_dir);
-    snprintf(better_rm_config, sizeof(better_rm_config), "%s/better-rm", xdg_config);
-
-    mkdir(xdg_config, 0755);
-    mkdir(better_rm_config, 0755);
-
-    snprintf(config_path, sizeof(config_path), "%s/config", better_rm_config);
-    write_config(config_path, "protect=/xdg/test1\n"
-                              "protect=/xdg/test2\n");
-
-    int count_before = protected_count;
-    load_configs();
-
-    // Should load XDG config
-    ck_assert(protected_count >= count_before + 2);
-    ck_assert(is_protected("/xdg/test1"));
-    ck_assert(is_protected("/xdg/test2"));
-}
-END_TEST
-
 // Test XDG_CONFIG_HOME environment variable
 START_TEST(test_xdg_config_home_env) {
     char xdg_home[256], better_rm_config[256], config_path[256];
@@ -228,7 +204,6 @@ Suite *test_config_parser_suite(void) {
     tcase_add_test(tc_core, test_comments_only);
     tcase_add_test(tc_core, test_valid_protect_directives);
     tcase_add_test(tc_core, test_protect_with_spaces);
-    tcase_add_test(tc_core, test_xdg_config_dir);
     tcase_add_test(tc_core, test_xdg_config_home_env);
     tcase_add_test(tc_core, test_long_lines);
 

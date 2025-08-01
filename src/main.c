@@ -446,7 +446,9 @@ int safe_remove(const char *path, const struct Options *opts) {
     return 0;
 }
 
-// Print version information
+/** Print version information
+ *
+ */
 void print_version() {
     printf("Version: %s\n", VERSION);
     printf("Copyright (C) 2025 Your Name\n");
@@ -456,7 +458,10 @@ void print_version() {
 }
 
 
-// Print usage
+/** Print usage
+ *
+ * @param program_name binary name
+ */
 void print_usage(const char *program_name) {
     printf("Usage: %s [options] file...\n", program_name);
     printf("Better replacement for rm command with protection against deleting system directories\n\n");

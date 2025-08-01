@@ -149,8 +149,7 @@ int ensure_trash_dir(const char *trash_dir) {
     struct stat st;
     if (stat(trash_dir, &st) == 0) {
         if (!S_ISDIR(st.st_mode)) {
-            fprintf(stderr, "better-rm: trash path exists but is not better_rm-trash-cleanup.service directory: %s\n",
-                    trash_dir);
+            fprintf(stderr, "better-rm: trash path exists but is not directory: %s\n", trash_dir);
             return -1;
         }
         return 0;
@@ -435,8 +434,8 @@ int safe_remove(const char *path, const struct Options *opts) {
     // Handle directories
     if (S_ISDIR(st.st_mode)) {
         if (!opts->recursive) {
-            fprintf(stderr, "%sbetter-rm: cannot remove '%s': Is better_rm-trash-cleanup.service directory\n",
-                    opts->dry_run ? "[DRY-RUN] " : "", path);
+            fprintf(stderr, "%sbetter-rm: cannot remove '%s': Is a directory\n", opts->dry_run ? "[DRY-RUN] " : "",
+                    path);
             return 1;
         }
 

@@ -18,6 +18,12 @@ A drop-in replacement for the `rm` command with protection against accidental de
 
 ## Installation
 
+### Quick Development Setup
+```bash
+# Set up development environment with uv
+./scripts/setup-dev.sh
+```
+
 ### Quick Install (System-wide)
 ```bash
 sudo ./scripts/install.sh
@@ -36,8 +42,12 @@ cmake ..
 make
 sudo make install
 
+# Using Make
+make
+sudo make install
+
 # Or direct compilation
-gcc -o better-rm src/main.c
+gcc -o better-rm src/main.c -I include -D_GNU_SOURCE
 sudo cp better-rm /usr/local/bin/
 ```
 
@@ -65,7 +75,7 @@ Add to your `~/.bashrc`:
 ```bash
 alias rm='better-rm --trash'    # Always use trash by default
 alias rmf='better-rm'           # Force permanent deletion
-alias rml='ls ~/.Trash'       # List trash contents
+alias rml='ls ~/.Trash'         # List trash contents
 ```
 
 ## Configuration
@@ -85,38 +95,61 @@ protect=/home/user/important
 protect=/home/user/work/production
 ```
 
+### XDG Base Directory Support
+The tool also checks for configuration in:
+- `$XDG_CONFIG_HOME/better-rm/config`
+- `~/.config/better-rm/config`
+
 ## Directory Structure
 
 ```
 .
-├── CHANGELOG.md
-├── cmake
-│       └── cmake_uninstall.cmake.in
-├── CMakeLists.txt
-├── config
-│       └── better-rm.conf.example
-├── docs
-│       ├── CMakeLists.txt
-│       ├── COMMITIZEN_SETUP.md
-│       ├── DEVELOPER_QUICK_REFERENCE.md
-│       ├── Doxyfile.in
-│       ├── GITHUB_WORKFLOWS.md
-│       └── html
-├── include
-│       └── version.h
-├── LICENCE.md
-├── pyproject.toml
-├── README.md
-├── scripts
-│       └── install.sh
-├── src
-│       └── main.c
-├── systemd
-│       ├── better-rm-trash-cleanup.service
-│       ├── better-rm-trash-cleanup.timer
-│       └── trash-cleanup.sh
-├── uv.lock
-└── VERSION
+├── .github/workflows/      # GitHub Actions CI/CD
+│   ├── build.yaml
+│   ├── bump-version.yml
+│   ├── pre-commit.yaml
+│   ├── publish_docs.yml
+│   └── release.yml
+├── cmake/                  # CMake modules
+│   └── cmake_uninstall.cmake.in
+├── config/                 # Configuration examples
+│   └── better-rm.conf.example
+├── docs/                   # Documentation
+│   ├── CMakeLists.txt
+│   ├── COMMITIZEN_SETUP.md
+│   ├── DEVELOPER_QUICK_REFERENCE.md
+│   ├── Doxyfile.in
+│   ├── GITHUB_WORKFLOWS.md
+│   ├── TROUBLESHOOTING.md
+│   ├── WORKFLOW_COMPARISON.md
+│   └── html/              # Generated API docs
+├── include/                # Header files
+│   └── version.h
+├── scripts/                # Utility scripts
+│   ├── check-branch.sh
+│   ├── debug-pre-commit.sh
+│   ├── install.sh
+│   ├── setup-dev.sh
+│   └── test-ci-locally.sh
+├── src/                    # Source code
+│   └── main.c
+├── systemd/                # Systemd integration
+│   ├── better-rm-trash-cleanup.service
+│   ├── better-rm-trash-cleanup.timer
+│   └── trash-cleanup.sh
+├── .clang-format          # Code formatting rules
+├── .cz.toml              # Commitizen configuration
+├── .gitignore            # Git ignore rules
+├── .pre-commit-config.yaml # Pre-commit hooks
+├── .python-version       # Python version for uv
+├── CHANGELOG.md          # Auto-generated changelog
+├── CMakeLists.txt        # CMake configuration
+├── LICENCE.md            # MIT License
+├── Makefile              # Alternative build system
+├── pyproject.toml        # Python project config
+├── README.md             # This file
+├── uv.lock              # uv lock file
+└── VERSION              # Version file
 ```
 
 ## Trash Management
@@ -126,7 +159,7 @@ protect=/home/user/work/production
 # List trash contents
 ls -la ~/.Trash/
 
-# Recover better_rm-trash-cleanup.service file
+# Recover a file
 mv ~/.Trash/document.txt.20240731_120000.1234 ~/document.txt
 ```
 
@@ -135,6 +168,10 @@ Enable the systemd timer for automatic cleanup of old trash files:
 ```bash
 sudo systemctl enable --now better-rm-trash-cleanup.timer
 ```
+
+### Environment Variables
+- `BETTER_RM_TRASH`: Override default trash directory
+- `BETTER_RM_TRASH_DAYS`: Days to keep files in trash (default: 30)
 
 ## Logging
 
@@ -153,12 +190,38 @@ sudo journalctl -t better-rm -f
 - GCC or Clang compiler
 - CMake 3.10+ (optional, for CMake build)
 - Linux with glibc
+- cppcheck and clang-format (for development)
+- uv (for development with Commitizen)
+
+### Install Build Dependencies
+```bash
+# Debian/Ubuntu
+sudo apt-get install build-essential cmake cppcheck clang-format
+
+# Fedora/RHEL
+sudo dnf install gcc cmake cppcheck clang-tools-extra
+
+# macOS
+brew install cmake cppcheck clang-format
+```
+
+### Development Setup
+```bash
+# Set up development environment
+./scripts/setup-dev.sh
+
+# Make commits using Commitizen
+uv run cz commit
+```
 
 ### Development Build
 ```bash
 mkdir build && cd build
 cmake -DCMAKE_BUILD_TYPE=Debug ..
 make
+
+# Or using Make
+make debug
 ```
 
 ### Create Distribution Package
@@ -166,17 +229,46 @@ make
 mkdir build && cd build
 cmake ..
 make package  # Creates .deb, .rpm, and .tar.gz packages
+
+# Or using Make
+make dist
+```
+
+### Build Documentation
+```bash
+mkdir build && cd build
+cmake ..
+make docs  # Requires Doxygen
 ```
 
 ## Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Set up development environment: `./scripts/setup-dev.sh`
+3. Create your feature branch (`git checkout -b feature/amazing-feature`)
+4. Make commits using commitizen: `uv run cz commit`
+5. Push to the branch (`git push origin feature/amazing-feature`)
+6. Open a Pull Request
 
-## [License](LICENCE.md)
+### Development Workflow
+
+The project uses GitHub Actions for CI/CD:
+
+- **Pre-commit checks**: Runs on all PRs (formatting, linting)
+- **Build and test**: Tests multiple compiler configurations
+- **Version bumping**: Automatic versioning based on commits
+- **Release creation**: Builds packages when tags are pushed
+
+### Commit Convention
+
+Follow conventional commits for automatic versioning:
+- `feat:` - New features (minor version bump)
+- `fix:` - Bug fixes (patch version bump)
+- `feat!:` or `BREAKING CHANGE:` - Breaking changes (major version bump)
+
+## License
+
+This project is licensed under the GPL v2 - see the [LICENCE.md](LICENCE.md) file for details.
 
 ## Safety Notes
 
@@ -197,8 +289,12 @@ make package  # Creates .deb, .rpm, and .tar.gz packages
 | Audit logging | ✗ | ✓ |
 | Dry-run mode | ✗ | ✓ |
 | Config files | ✗ | ✓ |
+| XDG Base Directory | ✗ | ✓ |
+
 
 ## TODO
-- [ ] Update documentation for main.c
+- [x] Update documentation for main.c
 - [ ] Provide Makefile
-- [ ] Support macOS
+- [ ] Support macOS (partial support, needs testing)
+- [ ] Add shell completion scripts
+- [ ] Create man page

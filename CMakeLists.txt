@@ -145,6 +145,18 @@ set(CPACK_RPM_PACKAGE_REQUIRES "glibc")
 include(CPack)
 
 #################################
+# Add testing option
+#################################
+option(BUILD_TESTS "Build unit tests" ON)
+
+# Add tests subdirectory if requested
+if(BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
+
+
+#################################
 # Print version information
 #################################
 message(STATUS "Building ${PROJECT_NAME} version ${VERSION_STRING}")

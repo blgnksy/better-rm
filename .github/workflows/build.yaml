@@ -10,8 +10,8 @@ jobs:
 
     strategy:
       matrix:
-        compiler: [gcc, clang]
-        build_type: [Debug, Release]
+        compiler: [ gcc, clang ]
+        build_type: [ Debug, Release ]
 
     steps:
       - uses: actions/checkout@v4
@@ -19,13 +19,14 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake build-essential clang cppcheck
+          sudo apt-get install -y cmake build-essential clang cppcheck check
 
       - name: Configure CMake
         run: |
           cmake -B build \
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-            -DCMAKE_C_COMPILER=${{ matrix.compiler }}
+            -DCMAKE_C_COMPILER=${{ matrix.compiler }} \
+            -DBUILD_TESTS=ON
 
       - name: Build
         run: cmake --build build
@@ -36,7 +37,12 @@ jobs:
             --suppress=missingIncludeSystem \
             --inline-suppr \
             -I include/ \
-            src/
+            src
+
+      - name: Run tests
+        run: |
+          cd build
+          ctest --output-on-failure -V
 
       - name: Test installation
         run: |

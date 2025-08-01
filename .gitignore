@@ -36,10 +36,6 @@ _deps/
 .DS_Store
 Thumbs.db
 
-# Test files
-test_*
-*.test
-
 # Temporary files
 *.tmp
 *.bak

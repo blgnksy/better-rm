@@ -79,6 +79,23 @@ make package
 ls *.deb *.rpm *.tar.gz
 ```
 
+### Run Unit Tests
+```bash
+# Quick test run
+./scripts/run-tests.sh
+
+# Run specific test suite
+make test-path_operations
+
+# Run with coverage report
+mkdir build-coverage && cd build-coverage
+cmake .. -DBUILD_TESTS=ON -DCMAKE_C_FLAGS="--coverage"
+make && ctest
+lcov --capture --directory . --output-file coverage.info
+genhtml coverage.info --output-directory coverage-report
+# Open coverage-report/index.html
+```
+
 ### Clean Everything
 ```bash
 rm -rf build/ .venv/ __pycache__/

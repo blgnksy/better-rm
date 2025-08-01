@@ -519,6 +519,7 @@ void print_usage(const char *program_name) {
     printf("\n");
 }
 
+#ifndef UNIT_TESTING
 int main(int argc, char *argv[]) {
     struct Options opts = {.recursive = false,
                            .force = false,
@@ -643,3 +644,4 @@ int main(int argc, char *argv[]) {
 
     return exit_status;
 }
+#endif // UNIT_TESTING

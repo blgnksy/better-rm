@@ -26,7 +26,7 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake doxygen graphviz
+          sudo apt-get install -y cmake doxygen graphviz check
 
       # Configure CMake
       - name: Configure CMake

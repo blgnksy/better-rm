@@ -3,6 +3,8 @@ build/
 cmake-build-*/
 Debug/
 Release/
+build-*-debug/
+build-*-release/
 
 # Compiled binaries
 better-rm

@@ -45,7 +45,7 @@ rm -rf build-*
 
 # Test Debug build with GCC
 echo -e "\n${YELLOW}Building with GCC (Debug)...${NC}"
-cmake -B build-gcc-debug -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=gcc
+cmake -B build-gcc-debug -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=gcc -DBUILD_TESTS=ON
 cmake --build build-gcc-debug
 
 # Test Release build with GCC
@@ -56,7 +56,7 @@ cmake --build build-gcc-release
 # Test with Clang if available
 if command -v clang &> /dev/null; then
     echo -e "\n${YELLOW}Building with Clang (Debug)...${NC}"
-    cmake -B build-clang-debug -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=clang
+    cmake -B build-clang-debug -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=clang -DBUILD_TESTS=ON
     cmake --build build-clang-debug
 fi
 
@@ -68,10 +68,14 @@ cppcheck --enable=all --error-exitcode=1 \
     -I include/ \
     src/
 
+# Run ctest
+echo -e "\n${YELLOW}Running ctest...${NC}"
+ctest --output-on-failure -V
+
 # Test the binary
 echo -e "\n${YELLOW}Testing binary...${NC}"
-./build-gcc-release/safe_rm --version
-./build-gcc-release/safe_rm --help
+./build-gcc-release/better-rm --version
+./build-gcc-release/better-rm --help
 
 # Check commit message format (if in git repo)
 if git rev-parse --git-dir > /dev/null 2>&1; then

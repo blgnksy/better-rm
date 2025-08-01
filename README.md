@@ -1,3 +1,7 @@
+[![Build and Test](https://github.com/blgnksy/better-rm/actions/workflows/build.yaml/badge.svg)](https://github.com/blgnksy/better-rm/actions/workflows/build.yaml)
+[![publish_docs.yml](https://github.com/blgnksy/better-rm/actions/workflows/publish_docs.yml/badge.svg)](https://github.com/blgnksy/better-rm/actions/workflows/publish_docs.yml)
+[![Pre-commit checks](https://github.com/blgnksy/better-rm/actions/workflows/pre-commit.yaml/badge.svg)](https://github.com/blgnksy/better-rm/actions/workflows/pre-commit.yaml)
+
 # better-rm - A Better rm Command
 
 A drop-in replacement for the `rm` command with protection against accidental deletion of system directories, trash/recovery functionality, and comprehensive logging.
@@ -16,7 +20,7 @@ A drop-in replacement for the `rm` command with protection against accidental de
 
 ### Quick Install (System-wide)
 ```bash
-sudo ./scripts/installation.sh
+sudo ./scripts/install.sh
 ```
 
 ### User-only Install
@@ -156,9 +160,7 @@ make package  # Creates .deb, .rpm, and .tar.gz packages
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## License
-
-[Your chosen license]
+## [License](LICENCE.md)
 
 ## Safety Notes
 
@@ -179,3 +181,8 @@ make package  # Creates .deb, .rpm, and .tar.gz packages
 | Audit logging | ✗ | ✓ |
 | Dry-run mode | ✗ | ✓ |
 | Config files | ✗ | ✓ |
+
+## TODO
+- [ ] Update documentation for main.c
+- [ ] Provide Makefile
+- [ ] Support macOS

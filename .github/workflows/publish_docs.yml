@@ -1,4 +1,4 @@
-name: publish_docs.yml
+name: Publish Documentation.yml
 on:
   push:
     branches:

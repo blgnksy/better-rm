@@ -89,18 +89,34 @@ protect=/home/user/work/production
 
 ```
 .
-├── src/                    # Source code
-│   └── main.c
-├── config/                 # Configuration examples
-│   └── better-rm.conf.example
-├── systemd/                # Systemd service files
-│   ├── better-rm-trash-cleanup.service
-│   ├── better-rm-trash-cleanup.timer
-│   └── trash-cleanup.sh
-├── scripts/                # Installation scripts
-│   └── install.sh
-├── CMakeLists.txt         # CMake build configuration
-└── README.md              # This file
+├── CHANGELOG.md
+├── cmake
+│       └── cmake_uninstall.cmake.in
+├── CMakeLists.txt
+├── config
+│       └── better-rm.conf.example
+├── docs
+│       ├── CMakeLists.txt
+│       ├── COMMITIZEN_SETUP.md
+│       ├── DEVELOPER_QUICK_REFERENCE.md
+│       ├── Doxyfile.in
+│       ├── GITHUB_WORKFLOWS.md
+│       └── html
+├── include
+│       └── version.h
+├── LICENCE.md
+├── pyproject.toml
+├── README.md
+├── scripts
+│       └── install.sh
+├── src
+│       └── main.c
+├── systemd
+│       ├── better-rm-trash-cleanup.service
+│       ├── better-rm-trash-cleanup.timer
+│       └── trash-cleanup.sh
+├── uv.lock
+└── VERSION
 ```
 
 ## Trash Management

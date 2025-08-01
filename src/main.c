@@ -213,7 +213,11 @@ int move_to_trash(const char *path, const char *trash_dir, bool verbose) {
     return 0;
 }
 
-// Function to resolve better_rm-trash-cleanup.service path to its absolute form
+/** Resolve path to its absolute form
+ *
+ * @param path path to be analyzed
+ * @return absolute path
+ */
 char *resolve_path(const char *path) {
     char *resolved = realpath(path, NULL);
     if (resolved == NULL) {
@@ -233,7 +237,11 @@ char *resolve_path(const char *path) {
     return resolved;
 }
 
-// Function to check if better_rm-trash-cleanup.service path is protected
+/** Function to check if path is protected
+ *
+ * @param path path to be analyzed
+ * @return true if protected else false
+ */
 bool is_protected(const char *path) {
     char *resolved = resolve_path(path);
     if (resolved == NULL)
@@ -258,7 +266,12 @@ bool is_protected(const char *path) {
     return false;
 }
 
-// Check if path is root when preserve-root is enabled
+/** Check if path is root when preserve-root is enabled
+ *
+ * @param path path to be analyzed
+ * @param opts provided options
+ * @return true if `/` else false
+ */
 bool is_root_with_preserve(const char *path, const struct Options *opts) {
     if (!opts->preserve_root || opts->no_preserve_root)
         return false;
@@ -272,7 +285,12 @@ bool is_root_with_preserve(const char *path, const struct Options *opts) {
     return is_root;
 }
 
-// Log deletion to syslog
+/** Log deletion to syslog
+ *
+ * @param path deleted path
+ * @param action TRASH or DELETE
+ * @param success
+ */
 void log_deletion(const char *path, const char *action, bool success) {
     openlog("better-rm", LOG_PID, LOG_USER);
 
@@ -286,7 +304,12 @@ void log_deletion(const char *path, const char *action, bool success) {
     closelog();
 }
 
-// Recursive directory removal
+/** Recursive directory removal
+ *
+ * @param path directory
+ * @param opts provided options
+ * @return 0 for success -1 for error
+ */
 int remove_directory(const char *path, const struct Options *opts) {
     DIR *dir = opendir(path);
     if (!dir) {
@@ -366,7 +389,14 @@ int remove_directory(const char *path, const struct Options *opts) {
     return ret;
 }
 
-// Safe remove function
+/** Safe Remove
+ *
+ * Moves a fs object to trash if the path is not protected while preserving root directory
+ *
+ * @param path path to be removed
+ * @param opts provided options
+ * @return
+ */
 int safe_remove(const char *path, const struct Options *opts) {
     // Check if path is protected
     if (is_protected(path)) {

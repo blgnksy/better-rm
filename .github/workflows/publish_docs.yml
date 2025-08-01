@@ -1,0 +1,142 @@
+name: publish_docs.yml
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      # Checkout current repository
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      # Install dependencies
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake doxygen graphviz
+
+      # Configure CMake
+      - name: Configure CMake
+        run: |
+          cmake -B build -S . -DBUILD_WITH_DOCS=ON
+
+      # Check Doxygen configuration
+      - name: Check Doxygen Configuration
+        run: |
+          echo "Checking Doxyfile.in for HTML generation..."
+          if grep -q "GENERATE_HTML.*=.*YES" docs/Doxyfile.in; then
+            echo "✓ HTML generation is enabled"
+          else
+            echo "⚠️  HTML generation might be disabled!"
+            echo "Current GENERATE_HTML setting:"
+            grep "GENERATE_HTML" docs/Doxyfile.in || echo "GENERATE_HTML not found"
+          fi
+
+          echo ""
+          echo "Checking INPUT setting..."
+          grep "^INPUT" docs/Doxyfile.in || echo "INPUT not found"
+
+          echo ""
+          echo "Checking OUTPUT_DIRECTORY setting..."
+          grep "^OUTPUT_DIRECTORY" docs/Doxyfile.in || echo "OUTPUT_DIRECTORY not found"
+
+          echo ""
+          echo "Checking for source files to document..."
+          echo "Files in src/:"
+          ls -la src/ | head -10
+          echo ""
+          echo "Total .c files: $(find src -name "*.c" | wc -l)"
+          echo "Total .h files: $(find src -name "*.h" -o -name "*.hpp" | wc -l)"
+
+      # Build documentation
+      - name: Build Documentation
+        run: |
+          # First, let's check what the CMake variables will be
+          echo "Checking CMake configuration..."
+          grep "DOXYGEN_INPUT_DIR" build/docs/Doxyfile || echo "INPUT not found"
+          grep "DOXYGEN_OUTPUT_DIR" build/docs/Doxyfile || echo "OUTPUT not found"
+
+          # Build the docs target
+          cmake --build build --target docs
+
+          # Documentation is generated in build/docs/doxygen based on your CMakeLists.txt
+          DOC_DIR="build/docs/doxygen"
+
+          echo "Looking for documentation in $DOC_DIR..."
+          ls -la "$DOC_DIR" || echo "Documentation directory not found!"
+
+          # Check for HTML output
+          if [ -d "$DOC_DIR/html" ]; then
+            echo "Found HTML docs in $DOC_DIR/html"
+            HTML_DIR="$DOC_DIR/html"
+
+            # Check if any HTML files were generated
+            FILE_COUNT=$(find "$HTML_DIR" -name "*.html" | wc -l)
+            echo "Generated $FILE_COUNT HTML files"
+
+            if [ "$FILE_COUNT" -eq 0 ]; then
+              echo "ERROR: No HTML files generated!"
+              echo "This usually means:"
+              echo "1. EXTRACT_ALL is NO and your code has no Doxygen comments"
+              echo "2. The INPUT directory is wrong"
+              echo "3. No source files were found"
+
+              # Let's check what source files exist
+              echo ""
+              echo "Checking for source files..."
+              echo "Files in src/:"
+              ls -la src/*.c 2>/dev/null || echo "No .c files in src/"
+              echo ""
+              echo "Files in include/:"
+              ls -la include/*.h 2>/dev/null || echo "No .h files in include/"
+            fi
+          else
+            echo "ERROR: No HTML documentation found!"
+            echo "Directory contents:"
+            find "$DOC_DIR" -type f | head -20
+            exit 1
+          fi
+
+          # Add .nojekyll to prevent Jekyll processing
+          touch "$HTML_DIR/.nojekyll"
+
+          # Ensure index.html exists (Doxygen might use files.html as main)
+          if [ ! -f "$HTML_DIR/index.html" ] && [ -f "$HTML_DIR/files.html" ]; then
+            echo "Creating index.html redirect to files.html"
+            echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=files.html"></head></html>' > "$HTML_DIR/index.html"
+          fi
+
+          # List contents for debugging
+          echo "HTML documentation contents:"
+          ls -la "$HTML_DIR" | head -20
+
+          # Store the path for the next step
+          echo "DOC_PATH=$HTML_DIR" >> $GITHUB_ENV
+
+      # Setup Pages
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      # Upload artifact
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ env.DOC_PATH }}
+
+      # Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

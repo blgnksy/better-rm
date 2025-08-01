@@ -1,6 +1,6 @@
 [project]
 name = "better-rm-dev"
-version = "0.3.3"
+version = "0.3.4"
 description = "Development environment for better-rm C project"
 readme = "README.md"
 requires-python = ">=3.8"

@@ -1,3 +1,5 @@
+/*! \file main.c
+ */
 #define GNU_SOURCE
 #include <dirent.h>
 #include <errno.h>
@@ -17,33 +19,36 @@
 // Default configuration
 #define CONFIG_FILE "/etc/better-rm.conf"
 #define USER_CONFIG_FILE ".better-rm.conf"
-#define TRASH_DIR_ENV "better-rm_TRASH"
+#define TRASH_DIR_ENV "BETTER_RM_TRASH"
 #define DEFAULT_TRASH_DIR ".Trash"
 #define MAX_PROTECTED_DIRS 100
 
-// Built-in protected directories
-const char *DEFAULT_PROTECTED_DIRS[] = {"/",      "/bin",  "/boot", "/dev",  "/etc", "/home", "/lib", "/lib32",
-                                        "/lib64", "/proc", "/root", "/sbin", "/sys", "/usr",  "/var", NULL};
+const char *DEFAULT_PROTECTED_DIRS[] = {
+        "/",      "/bin",  "/boot", "/dev",  "/etc", "/home", "/lib", "/lib32",
+        "/lib64", "/proc", "/root", "/sbin", "/sys", "/usr",  "/var", NULL}; /*!< Built-in protected directories */
 
 // Dynamic protected directories list
 char *protected_dirs[MAX_PROTECTED_DIRS];
 int protected_count = 0;
 
-// Options structure
+/*! Options struct used to store user defined options */
 struct Options {
-    bool recursive;
-    bool force;
-    bool verbose;
-    bool interactive;
-    bool dry_run;
-    bool preserve_root;
-    bool one_file_system;
-    bool use_trash;
-    bool no_preserve_root;
-    char *trash_dir;
+    bool recursive; /*!< remove directories and their contents recursively */
+    bool force; /*!< ignore nonexistent files, never prompt */
+    bool verbose; /*!< explain what is being done */
+    bool interactive; /*!< prompt before every removal */
+    bool dry_run; /*!< show what would be deleted without actually removing */
+    bool preserve_root; /*!< block removing `/` */
+    bool one_file_system; /*!< stay on the same filesystem */
+    bool use_trash; /*!< move files to trash instead of deleting */
+    bool no_preserve_root; /*!< allow removing `/` */
+    char *trash_dir; /*!< specify trash directory */
 };
 
-// Initialize protected directories from defaults
+
+/**
+ * Initialize the default protected directories defined in \ref DEFAULT_PROTECTED_DIRS
+ */
 void init_protected_dirs() {
     int i = 0;
     while (DEFAULT_PROTECTED_DIRS[i] != NULL && protected_count < MAX_PROTECTED_DIRS) {
@@ -52,7 +57,11 @@ void init_protected_dirs() {
     }
 }
 
-// Load configuration file
+
+/** Loads the configuration for a given file
+ *
+ * @param filename absolute path of configuration file to be loaded
+ */
 void load_config_file(const char *filename) {
     FILE *fp = fopen(filename, "r");
     if (!fp)
@@ -82,7 +91,12 @@ void load_config_file(const char *filename) {
     fclose(fp);
 }
 
-// Load all configuration files
+
+/** Loads all config files
+ *
+ * First reads the global configuration file \ref CONFIG_FILE then resolves the user configuration
+ * file location and loads to be able to update \ref DEFAULT_PROTECTED_DIRS
+ */
 void load_configs() {
     // System config
     load_config_file("/etc/better-rm.conf");
@@ -103,7 +117,11 @@ void load_configs() {
     load_config_file(user_config);
 }
 
-// Get trash directory path
+
+/** Resolves the absolute path of trash directory
+ *
+ * @return trash directory's absolute path
+ */
 char *get_trash_dir() {
     // Check environment variable first
     char *env_trash = getenv(TRASH_DIR_ENV);
@@ -121,7 +139,12 @@ char *get_trash_dir() {
     return "/tmp/.Trash"; // Fallback
 }
 
-// Create trash directory if it doesn't exist
+
+/** Create trash directory if it doesn't exist
+ *
+ * @param trash_dir trash directory absolute path
+ * @return trash directory's absolute path
+ */
 int ensure_trash_dir(const char *trash_dir) {
     struct stat st;
     if (stat(trash_dir, &st) == 0) {
@@ -142,7 +165,13 @@ int ensure_trash_dir(const char *trash_dir) {
     return 0;
 }
 
-// Generate unique filename for trash
+
+/** Generate unique filename while moving the file to the trash
+ *
+ * @param original_path file to be deleted(moved)
+ * @param trash_dir trash directory
+ * @return filename
+ */
 char *generate_trash_name(const char *original_path, const char *trash_dir) {
     static char trash_path[PATH_MAX];
     char *basename_copy = strdup(original_path);
@@ -161,7 +190,13 @@ char *generate_trash_name(const char *original_path, const char *trash_dir) {
     return trash_path;
 }
 
-// Move file to trash
+/** Move file to the trash
+ *
+ * @param path absolute path of the file to be moved
+ * @param trash_dir trash directory
+ * @param verbose verbose output
+ * @return 0 for success -1 for error
+ */
 int move_to_trash(const char *path, const char *trash_dir, bool verbose) {
     const char *trash_path = generate_trash_name(path, trash_dir);
 
@@ -439,7 +474,7 @@ void print_usage(const char *program_name) {
     printf("      --one-file-system       stay on the same filesystem\n");
     printf("  -h, --help                  display this help and exit\n\n");
     printf("Environment variables:\n");
-    printf("  better-rm_TRASH              Override default trash directory\n\n");
+    printf("  BETTER_RM_TRASH             Override default trash directory\n\n");
     printf("Configuration files:\n");
     printf("  %s                    System-wide configuration\n", CONFIG_FILE);
     printf("  ~/%s                  User configuration\n\n", USER_CONFIG_FILE);

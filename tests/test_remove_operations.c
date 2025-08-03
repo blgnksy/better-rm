@@ -23,7 +23,7 @@ struct Options {
     bool one_file_system;
     bool use_trash;
     bool no_preserve_root;
-    char *trash_dir;
+    const char *trash_dir;
 };
 
 // Test fixture data

@@ -3,21 +3,16 @@ cmake_minimum_required(VERSION 3.31)
 #################################
 # Read version from VERSION file
 #################################
-file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" VERSION_STRING)
-string(STRIP "${VERSION_STRING}" VERSION_STRING)
-
-#################################
-# Parse version components
-#################################
-string(REGEX MATCH "^([0-9]+)\\.([0-9]+)\\.([0-9]+)" VERSION_MATCH "${VERSION_STRING}")
-set(VERSION_MAJOR ${CMAKE_MATCH_1})
-set(VERSION_MINOR ${CMAKE_MATCH_2})
-set(VERSION_PATCH ${CMAKE_MATCH_3})
+if (NOT EXISTS "${CMAKE_SOURCE_DIR}/VERSION")
+    message(FATAL_ERROR "VERSION file not found")
+endif ()
+file(READ "${CMAKE_SOURCE_DIR}/VERSION" VERSION_CONTENT)
+string(STRIP "${VERSION_CONTENT}" PROJECT_VERSION)
 
 #################################
 # Define project with version
 #################################
-project(better-rm VERSION ${VERSION_STRING} LANGUAGES C)
+project(better_rm VERSION ${PROJECT_VERSION} LANGUAGES C)
 
 #################################
 # Set C standard
@@ -26,37 +21,66 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 #################################
+# Detect systemd unit path via pkg-config
+#################################
+find_package(PkgConfig)
+if (PkgConfig_FOUND)
+    pkg_check_modules(SYSTEMD systemd)
+endif ()
+
+#################################
+# Sets unit file installation directory
+#################################
+if (SYSTEMD_FOUND AND SYSTEMD_SYSTEM_UNIT_DIR)
+    set(SYSTEMD_UNIT_DIR ${SYSTEMD_SYSTEM_UNIT_DIR})
+else ()
+    set(SYSTEMD_UNIT_DIR "${CMAKE_INSTALL_LIBDIR}/systemd/system")
+endif ()
+
+#################################
 # Generate Docs
 #################################
 OPTION(BUILD_WITH_DOCS "Generate Docs" ON)
-IF(BUILD_WITH_DOCS)
+IF (BUILD_WITH_DOCS)
     ADD_SUBDIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/docs)
-ENDIF()
+ENDIF ()
 
 #################################
 # Add executable
 #################################
-add_executable(better-rm src/main.c)
+file(GLOB SRC_FILES src/*.c)
+add_executable(better-rm ${SRC_FILES})
 
 #################################
 # Set compile options
 #################################
-target_compile_options(better-rm PRIVATE -Wall -Wextra -Wpedantic)
+target_compile_options(
+        better-rm
+        PRIVATE
+        -Wall -Wextra -Wpedantic -Wformat=2 -Wno-unused-parameter -Wshadow
+        -Wwrite-strings -Wstrict-prototypes -Wold-style-definition
+        -Wredundant-decls -Wnested-externs -Wmissing-include-dirs
+)
+
+string(TOLOWER "${CMAKE_BUILD_TYPE}" build_type)
+
+if (CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
+    set(SANITIZER_FLAGS "-fsanitize=address,undefined")
+    if (build_type STREQUAL "debug" OR build_type STREQUAL "relwithdebinfo")
+        message(STATUS "Enabling sanitizers for build type: ${CMAKE_BUILD_TYPE}")
+        target_compile_options(better-rm PRIVATE ${SANITIZER_FLAGS} -g)
+        target_link_options(better-rm PRIVATE ${SANITIZER_FLAGS})
+        add_compile_options(-Wjump-misses-init -Wlogical-op)
+    endif ()
+else ()
+    message("Unsupported compiler. Try using GCC or Clang")
+endif ()
+
 
 #################################
 # Define GNU_SOURCE for Linux-specific features
 #################################
 target_compile_definitions(better-rm PRIVATE _GNU_SOURCE)
-
-#################################
-# Pass version information to the compiler
-#################################
-target_compile_definitions(better-rm PRIVATE
-        VERSION="${VERSION_STRING}"
-        VERSION_MAJOR=${VERSION_MAJOR}
-        VERSION_MINOR=${VERSION_MINOR}
-        VERSION_PATCH=${VERSION_PATCH}
-)
 
 #################################
 # Include directories
@@ -79,6 +103,13 @@ install(TARGETS better-rm
 )
 
 #################################
+# Install cleanup script
+#################################
+install(PROGRAMS systemd/trash-cleanup.sh
+        DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+#################################
 # Install configuration file
 #################################
 install(FILES config/better-rm.conf.example
@@ -89,7 +120,7 @@ install(FILES config/better-rm.conf.example
 #################################
 # Install systemd units (optional, only on Linux with systemd)
 #################################
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     # Check if systemd is available
     execute_process(
             COMMAND systemctl --version
@@ -98,12 +129,13 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
             RESULT_VARIABLE SYSTEMD_FOUND
     )
 
-    if(SYSTEMD_FOUND EQUAL 0)
+    if (SYSTEMD_FOUND EQUAL 0)
         # Install systemd service files
         install(FILES
                 systemd/better-rm-trash-cleanup.service
                 systemd/better-rm-trash-cleanup.timer
-                DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/systemd/system
+                DESTINATION ${SYSTEMD_UNIT_DIR}
+                PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
         )
 
         # Install cleanup script
@@ -112,25 +144,47 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         )
 
         message(STATUS "Systemd support enabled")
-    else()
+    else ()
         message(STATUS "Systemd not found, skipping systemd unit installation")
-    endif()
-endif()
+    endif ()
+endif ()
 
 #################################
-# Create uninstall target
+# Post-install message
 #################################
-if(NOT TARGET uninstall)
+add_custom_target(post_install_message ALL
+        COMMAND ${CMAKE_COMMAND} -E echo "Installation complete."
+        COMMAND ${CMAKE_COMMAND} -E echo "To use better-rm as default rm, add this to your shell config:"
+        COMMAND ${CMAKE_COMMAND} -E echo "  alias rm='better-rm --trash'"
+        VERBATIM
+)
+
+#################################
+# Optional: User config helper
+#################################
+add_custom_target(install-user-config
+        COMMAND ${CMAKE_COMMAND} -E make_directory "$ENV{HOME}/.Trash"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_SOURCE_DIR}/config/better-rm.conf.example"
+        "$ENV{HOME}/.better-rm.conf"
+        COMMENT "Installing user config and creating ~/.Trash directory"
+)
+
+#################################
+# Uninstall target
+#################################
+if (NOT TARGET uninstall)
     configure_file(
-            "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
-            "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+            "${CMAKE_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
+            "${CMAKE_BINARY_DIR}/cmake_uninstall.cmake"
             IMMEDIATE @ONLY
     )
-
     add_custom_target(uninstall
-            COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake
+            COMMAND ${CMAKE_COMMAND} -P ${CMAKE_BINARY_DIR}/cmake_uninstall.cmake
+            COMMENT "Uninstalling everything installed by make install"
     )
-endif()
+endif ()
+
 
 #################################
 # Add .deb packaging support
@@ -150,10 +204,10 @@ include(CPack)
 option(BUILD_TESTS "Build unit tests" ON)
 
 # Add tests subdirectory if requested
-if(BUILD_TESTS)
+if (BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
-endif()
+endif ()
 
 
 #################################

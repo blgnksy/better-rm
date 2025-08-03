@@ -153,7 +153,7 @@ endif ()
 # Post-install message
 #################################
 add_custom_target(post_install_message ALL
-        COMMAND ${CMAKE_COMMAND} -E echo "\nInstallation complete."
+        COMMAND ${CMAKE_COMMAND} -E echo "Installation complete."
         COMMAND ${CMAKE_COMMAND} -E echo "To use better-rm as default rm, add this to your shell config:"
         COMMAND ${CMAKE_COMMAND} -E echo "  alias rm='better-rm --trash'"
         VERBATIM

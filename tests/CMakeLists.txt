@@ -2,6 +2,8 @@
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(CHECK REQUIRED check)
 
+set(NO_OPTIMIZE_FLAGS "-O0")
+
 # Include directories
 include_directories(
         ${CMAKE_SOURCE_DIR}/include
@@ -17,6 +19,10 @@ add_library(better_rm_lib STATIC
 target_compile_definitions(better_rm_lib PRIVATE
         _GNU_SOURCE
         UNIT_TESTING  # Define this to exclude main() from compilation
+)
+
+target_compile_options(better_rm_lib PRIVATE
+        ${NO_OPTIMIZE_FLAGS}
 )
 
 # Test executables
@@ -42,6 +48,7 @@ target_link_libraries(test_runner
 )
 
 target_compile_definitions(test_runner PRIVATE _GNU_SOURCE)
+target_compile_options(test_runner PRIVATE ${NO_OPTIMIZE_FLAGS})
 
 # Add test
 add_test(NAME check_tests COMMAND test_runner)
@@ -64,6 +71,7 @@ foreach(test_source ${TEST_SOURCES})
             _GNU_SOURCE
             TEST_SUITE=${test_name}
     )
+    target_compile_options(${test_name}_individual PRIVATE ${NO_OPTIMIZE_FLAGS})
 endforeach()
 
 # Add a custom target to run all tests

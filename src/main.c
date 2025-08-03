@@ -42,14 +42,14 @@ struct Options {
     bool one_file_system; /*!< stay on the same filesystem */
     bool use_trash; /*!< move files to trash instead of deleting */
     bool no_preserve_root; /*!< allow removing `/` */
-    char *trash_dir; /*!< specify trash directory */
+    const char *trash_dir; /*!< specify trash directory */
 };
 
 
 /**
  * Initialize the default protected directories defined in \ref DEFAULT_PROTECTED_DIRS
  */
-void init_protected_dirs() {
+void init_protected_dirs(void) {
     int i = 0;
     while (DEFAULT_PROTECTED_DIRS[i] != NULL && protected_count < MAX_PROTECTED_DIRS) {
         protected_dirs[protected_count++] = strdup(DEFAULT_PROTECTED_DIRS[i]);
@@ -97,7 +97,7 @@ void load_config_file(const char *filename) {
  * First reads the global configuration file \ref CONFIG_FILE then resolves the user configuration
  * file location and loads to be able to update \ref DEFAULT_PROTECTED_DIRS
  */
-void load_configs() {
+void load_configs(void) {
     // System config
     load_config_file("/etc/better-rm.conf");
 
@@ -122,7 +122,7 @@ void load_configs() {
  *
  * @return trash directory's absolute path
  */
-char *get_trash_dir() {
+const char *get_trash_dir(void) {
     // Check environment variable first
     char *env_trash = getenv(TRASH_DIR_ENV);
     if (env_trash)
@@ -226,7 +226,7 @@ char *resolve_path(const char *path) {
             if (getcwd(cwd, sizeof(cwd)) != NULL) {
                 resolved = malloc(PATH_MAX);
                 if (resolved) {
-                    snprintf(resolved, PATH_MAX, "%s/%s", cwd, path);
+                    snprintf(resolved, PATH_MAX + 1, "%s/%s", cwd, path);
                 }
             }
         } else {
@@ -478,7 +478,7 @@ int safe_remove(const char *path, const struct Options *opts) {
 /** Print version information
  *
  */
-void print_version() {
+void print_version(void) {
     printf("Version: %s\n", VERSION);
     printf("Copyright (C) 2025 Your Name\n");
     printf("License: MIT\n");

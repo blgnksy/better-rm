@@ -1,8 +1,13 @@
 FIND_PACKAGE( Doxygen )
 IF(DOXYGEN_FOUND)
+    # Set exclude directories
+    SET(DOXYGEN_EXCLUDE_DIRS
+            "${PROJECT_BINARY_DIR}"       # excludes build dir
+            "${PROJECT_SOURCE_DIR}/cmake"
+    )
     MESSAGE(STATUS "Doxygen found: ${DOXYGEN_EXECUTABLE} -- ${DOXYGEN_VERSION}")
     # Set Doxygen input and output files.
-    SET(DOXYGEN_INPUT_DIR "${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}")
+    SET(DOXYGEN_INPUT_DIR "${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/")
     SET(DOXYGEN_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
     SET(DOXYGEN_INDEX_FILE ${DOXYGEN_OUTPUT_DIR}/xml/index.xml)
     SET(DOXYFILE_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in)

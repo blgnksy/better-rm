@@ -24,16 +24,6 @@ A drop-in replacement for the `rm` command with protection against accidental de
 ./scripts/setup-dev.sh
 ```
 
-### Quick Install (System-wide)
-```bash
-sudo ./scripts/install.sh
-```
-
-### User-only Install
-```bash
-./scripts/install.sh --user
-```
-
 ### Manual Build
 ```bash
 # Using CMake
@@ -50,6 +40,17 @@ sudo make install
 gcc -o better-rm src/main.c -I include -D_GNU_SOURCE
 sudo cp better-rm /usr/local/bin/
 ```
+
+### Cmake Targets
+
+| Target                     | Purpose                                   |
+| -------------------------- | ----------------------------------------- |
+| `make`                     | Compile the binary                        |
+| `make install`             | Install binary, config, systemd units     |
+| `make uninstall`           | Remove installed files                    |
+| `make install-user-config` | Setup per-user config and trash folder    |
+| `make help`                | Print target help info                    |
+| `make package`             | Generate `.tar.gz` package with CPack     |
 
 ## Usage
 
@@ -290,7 +291,6 @@ This project is licensed under the GPL v2 - see the [LICENCE.md](LICENCE.md) fil
 
 
 ## TODO
-- [ ] Provide Makefile
 - [ ] Support macOS (partial support, needs testing)
 - [ ] Add shell completion scripts
 - [ ] Create man page

@@ -77,9 +77,9 @@ else ()
 endif ()
 
 
-#################################
+###############################################
 # Define GNU_SOURCE for Linux-specific features
-#################################
+###############################################
 target_compile_definitions(better-rm PRIVATE _GNU_SOURCE)
 
 #################################
@@ -117,9 +117,9 @@ install(FILES config/better-rm.conf.example
         RENAME better-rm.conf.example
 )
 
-#################################
+##################################################################
 # Install systemd units (optional, only on Linux with systemd)
-#################################
+##################################################################
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     # Check if systemd is available
     execute_process(

@@ -11,6 +11,7 @@
 int move_to_trash(const char *path, const char *trash_dir, bool verbose);
 int ensure_trash_dir(const char *trash_dir);
 char *generate_trash_name(const char *original_path, const char *trash_dir);
+int copy_recursive(const char *src, const char *dst);
 
 // Test fixture data
 static char *test_dir = NULL;
@@ -235,6 +236,28 @@ START_TEST(test_move_readonly_file) {
 }
 END_TEST
 
+// Test manual recursive copy implementation
+START_TEST(test_copy_recursive) {
+    const char *src_dir = "src_dir";
+    const char *dst_dir = "dst_dir";
+    mkdir(src_dir, 0755);
+
+    create_test_file("src_dir/file1.txt", "content1");
+    mkdir("src_dir/nested", 0755);
+    create_test_file("src_dir/nested/file2.txt", "content2");
+    symlink("file1.txt", "src_dir/link1");
+
+    ck_assert_int_eq(copy_recursive(src_dir, dst_dir), 0);
+
+    ck_assert(file_exists("dst_dir/file1.txt"));
+    ck_assert(file_exists("dst_dir/nested/file2.txt"));
+
+    struct stat st;
+    ck_assert_int_eq(lstat("dst_dir/link1", &st), 0);
+    ck_assert(S_ISLNK(st.st_mode));
+}
+END_TEST
+
 // Create test suite
 Suite *test_trash_operations_suite(void) {
     Suite *s;
@@ -254,6 +277,7 @@ Suite *test_trash_operations_suite(void) {
     tcase_add_test(tc_core, test_move_file_special_chars);
     tcase_add_test(tc_core, test_trash_dir_permissions);
     tcase_add_test(tc_core, test_move_readonly_file);
+    tcase_add_test(tc_core, test_copy_recursive);
 
     suite_add_tcase(s, tc_core);
 

@@ -7,12 +7,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-// Function declarations from main.c
-int safe_remove(const char *path, const struct Options *opts);
-int remove_directory(const char *path, const struct Options *opts);
-void init_protected_dirs(void);
-int ensure_trash_dir(const char *trash_dir);
-
 struct Options {
     bool recursive;
     bool force;
@@ -25,6 +19,12 @@ struct Options {
     bool no_preserve_root;
     const char *trash_dir;
 };
+
+// Function declarations from main.c
+int safe_remove(const char *path, const struct Options *opts);
+int remove_directory(const char *path, const struct Options *opts);
+int ensure_trash_dir(const char *trash_dir);
+void init_protected_dirs(void);
 
 // Test fixture data
 static char *test_dir = NULL;
@@ -232,6 +232,22 @@ START_TEST(test_remove_nested_directories) {
 }
 END_TEST
 
+// Test optimized directory trashing
+START_TEST(test_remove_directory_trash) {
+    const char *test_dir_name = "dir_trash";
+    mkdir(test_dir_name, 0755);
+    create_test_file("dir_trash/file1.txt", "content");
+
+    struct Options opts = default_opts;
+    opts.recursive = true;
+    opts.use_trash = true;
+    opts.trash_dir = trash_dir;
+
+    ck_assert_int_eq(safe_remove(test_dir_name, &opts), 0);
+    ck_assert(!file_exists(test_dir_name));
+}
+END_TEST
+
 // Create test suite
 Suite *test_remove_operations_suite(void) {
     Suite *s;
@@ -252,6 +268,7 @@ Suite *test_remove_operations_suite(void) {
     tcase_add_test(tc_core, test_remove_with_trash);
     tcase_add_test(tc_core, test_remove_symlink);
     tcase_add_test(tc_core, test_remove_nested_directories);
+    tcase_add_test(tc_core, test_remove_directory_trash);
 
     suite_add_tcase(s, tc_core);
 

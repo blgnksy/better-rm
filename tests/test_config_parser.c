@@ -190,6 +190,53 @@ START_TEST(test_long_lines) {
 END_TEST
 
 
+// Test legacy dot-file support (~/.better-rm.conf)
+START_TEST(test_legacy_config) {
+    char legacy_path[256];
+    snprintf(legacy_path, sizeof(legacy_path), "%s/.better-rm.conf", test_dir);
+    write_config(legacy_path, "protect=/legacy/custom\n");
+
+    int count_before = protected_count;
+    load_configs();
+
+    ck_assert(protected_count >= count_before + 1);
+    ck_assert(is_protected("/legacy/custom"));
+}
+END_TEST
+
+// Test configuration precedence (User config overwrites global)
+START_TEST(test_config_precedence) {
+    // 1. Create global config (will be mocked if we could, but we'll use a local file for load_configs simulation)
+    // Actually, we can't easily change the hardcoded "/etc/better-rm.conf" without changing the code.
+    // However, our implementation of load_configs uses CONFIG_FILE macro.
+    // For testing, we can verify that IF a user config exists, the protected list is NOT what would be in a global one.
+
+    // Instead, let's test the logic branch: if XDG exists, legacy is skipped.
+    char xdg_home[256], better_rm_config[256], xdg_config[256], legacy_config[256];
+    snprintf(xdg_home, sizeof(xdg_home), "%s/xdg", test_dir);
+    snprintf(better_rm_config, sizeof(better_rm_config), "%s/better-rm", xdg_home);
+    mkdir(xdg_home, 0755);
+    mkdir(better_rm_config, 0755);
+
+    setenv("XDG_CONFIG_HOME", xdg_home, 1);
+
+    snprintf(xdg_config, sizeof(xdg_config), "%s/config", better_rm_config);
+    write_config(xdg_config, "protect=/xdg/only\n");
+
+    snprintf(legacy_config, sizeof(legacy_config), "%s/.better-rm.conf", test_dir);
+    write_config(legacy_config, "protect=/legacy/skip\n");
+
+    int count_before = protected_count;
+    load_configs();
+
+    // Should have loaded XDG, and skipped Legacy
+    ck_assert(is_protected("/xdg/only"));
+    ck_assert(!is_protected("/legacy/skip"));
+
+    unsetenv("XDG_CONFIG_HOME");
+}
+END_TEST
+
 // Create test suite
 Suite *test_config_parser_suite(void) {
     Suite *s;
@@ -206,6 +253,8 @@ Suite *test_config_parser_suite(void) {
     tcase_add_test(tc_core, test_protect_with_spaces);
     tcase_add_test(tc_core, test_xdg_config_home_env);
     tcase_add_test(tc_core, test_long_lines);
+    tcase_add_test(tc_core, test_legacy_config);
+    tcase_add_test(tc_core, test_config_precedence);
 
     suite_add_tcase(s, tc_core);
 
